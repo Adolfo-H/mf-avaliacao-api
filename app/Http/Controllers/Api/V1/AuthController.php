@@ -14,16 +14,39 @@ class AuthController extends Controller
     public function login(Request $request): JsonResponse
     {
         $credentials = $request->validate([
-            'email' => ['required', 'email'],
-            'password' => ['required', 'string'],
-            'device_name' => ['required', 'string', 'max:100'],
+            'email' => [
+                'required',
+                'email',
+            ],
+
+            'password' => [
+                'required',
+                'string',
+            ],
+
+            'device_name' => [
+                'required',
+                'string',
+                'max:100',
+            ],
         ]);
 
-        $user = User::where('email', $credentials['email'])->first();
+        $user = User::query()
+            ->where('email', $credentials['email'])
+            ->first();
 
-        if (! $user || ! Hash::check($credentials['password'], $user->password)) {
+        if (
+            ! $user
+            || ! $user->active
+            || ! Hash::check(
+                $credentials['password'],
+                $user->password,
+            )
+        ) {
             throw ValidationException::withMessages([
-                'email' => ['E-mail ou senha inválidos.'],
+                'email' => [
+                    'E-mail ou senha inválidos.',
+                ],
             ]);
         }
 
@@ -33,11 +56,19 @@ class AuthController extends Controller
 
         return response()->json([
             'token' => $token,
+
             'token_type' => 'Bearer',
+
             'user' => [
                 'id' => $user->id,
+
                 'name' => $user->name,
+
                 'email' => $user->email,
+
+                'role' => $user->role->value,
+
+                'active' => $user->active,
             ],
         ]);
     }
@@ -49,15 +80,24 @@ class AuthController extends Controller
         return response()->json([
             'user' => [
                 'id' => $user->id,
+
                 'name' => $user->name,
+
                 'email' => $user->email,
+
+                'role' => $user->role->value,
+
+                'active' => $user->active,
             ],
         ]);
     }
 
     public function logout(Request $request): JsonResponse
     {
-        $request->user()->currentAccessToken()?->delete();
+        $request
+            ->user()
+            ->currentAccessToken()
+            ?->delete();
 
         return response()->json([
             'message' => 'Sessão encerrada com sucesso.',
