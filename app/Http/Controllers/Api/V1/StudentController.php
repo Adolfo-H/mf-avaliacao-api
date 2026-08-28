@@ -14,16 +14,15 @@ use Illuminate\Support\Facades\DB;
 
 class StudentController extends Controller
 {
-    public function index(
-        Request $request,
-    ): AnonymousResourceCollection {
+    public function index(Request $request): AnonymousResourceCollection
+    {
         $search = trim(
-            (string) $request->query('search', ''),
+            (string) $request->query('search', '')
         );
 
         $status = (string) $request->query(
             'status',
-            'active',
+            'active'
         );
 
         $students = Student::query()
@@ -36,55 +35,59 @@ class StudentController extends Controller
                                 ->where(
                                     'name',
                                     'like',
-                                    "%{$search}%",
+                                    "%{$search}%"
                                 )
                                 ->orWhere(
                                     'email',
                                     'like',
-                                    "%{$search}%",
+                                    "%{$search}%"
                                 )
                                 ->orWhere(
                                     'mobile_phone',
                                     'like',
-                                    "%{$search}%",
+                                    "%{$search}%"
                                 );
-                        },
+                        }
                     );
-                },
+                }
             )
             ->when(
                 $status === 'active',
-                fn ($query) => $query
-                    ->where('active', true)
-                    ->whereNull('archived_at'),
+                function ($query): void {
+                    $query
+                        ->where('active', true)
+                        ->whereNull('archived_at');
+                }
             )
             ->when(
                 $status === 'inactive',
-                fn ($query) => $query
-                    ->where('active', false)
-                    ->whereNull('archived_at'),
+                function ($query): void {
+                    $query
+                        ->where('active', false)
+                        ->whereNull('archived_at');
+                }
             )
             ->when(
                 $status === 'archived',
-                fn ($query) => $query
-                    ->whereNotNull('archived_at'),
+                function ($query): void {
+                    $query->whereNotNull('archived_at');
+                }
             )
             ->when(
                 $status !== 'archived',
-                fn ($query) => $query
-                    ->whereNull('archived_at'),
+                function ($query): void {
+                    $query->whereNull('archived_at');
+                }
             )
             ->orderBy('name')
             ->paginate(20)
             ->withQueryString();
 
-        return StudentResource::collection(
-            $students,
-        );
+        return StudentResource::collection($students);
     }
 
     public function store(
-        StoreStudentRequest $request,
+        StoreStudentRequest $request
     ): StudentResource {
         $data = $request->validated();
 
@@ -107,7 +110,7 @@ class StudentController extends Controller
 
                     'city' => $data['city'] ?? null,
 
-                    'state' => isset($data['state'])
+                    'state' => ! empty($data['state'])
                             ? strtoupper($data['state'])
                             : null,
 
@@ -115,37 +118,36 @@ class StudentController extends Controller
 
                     'home_phone' => $data['home_phone'] ?? null,
 
-                    'email' => isset($data['email'])
-                            ? strtolower($data['email'])
+                    'email' => ! empty($data['email'])
+                            ? strtolower(
+                                trim($data['email'])
+                            )
                             : null,
 
                     'active' => $data['active'] ?? true,
 
-                    'administrative_notes' => $data['administrative_notes'] ?? null,
+                    'administrative_notes' => $data['administrative_notes']
+                        ?? null,
 
                     'created_by' => $request->user()->id,
 
                     'updated_by' => $request->user()->id,
                 ]);
-            },
+            }
         );
 
-        return new StudentResource(
-            $student,
-        );
+        return new StudentResource($student);
     }
 
     public function show(
-        Student $student,
+        Student $student
     ): StudentResource {
-        return new StudentResource(
-            $student,
-        );
+        return new StudentResource($student);
     }
 
     public function update(
         UpdateStudentRequest $request,
-        Student $student,
+        Student $student
     ): StudentResource {
         $data = $request->validated();
 
@@ -153,7 +155,7 @@ class StudentController extends Controller
             function () use (
                 $data,
                 $request,
-                $student,
+                $student
             ): void {
                 $payload = [];
 
@@ -175,7 +177,7 @@ class StudentController extends Controller
                     if (
                         array_key_exists(
                             $field,
-                            $data,
+                            $data
                         )
                     ) {
                         $payload[$field] =
@@ -186,24 +188,28 @@ class StudentController extends Controller
                 if (
                     array_key_exists(
                         'state',
-                        $data,
+                        $data
                     )
                 ) {
                     $payload['state'] =
-                        $data['state']
-                            ? strtoupper($data['state'])
+                        ! empty($data['state'])
+                            ? strtoupper(
+                                $data['state']
+                            )
                             : null;
                 }
 
                 if (
                     array_key_exists(
                         'email',
-                        $data,
+                        $data
                     )
                 ) {
                     $payload['email'] =
-                        $data['email']
-                            ? strtolower($data['email'])
+                        ! empty($data['email'])
+                            ? strtolower(
+                                trim($data['email'])
+                            )
                             : null;
                 }
 
@@ -211,17 +217,17 @@ class StudentController extends Controller
                     $request->user()->id;
 
                 $student->update($payload);
-            },
+            }
         );
 
         return new StudentResource(
-            $student->fresh(),
+            $student->fresh()
         );
     }
 
     public function updateStatus(
         UpdateStudentStatusRequest $request,
-        Student $student,
+        Student $student
     ): StudentResource {
         $student->update([
             'active' => $request->boolean('active'),
@@ -230,7 +236,7 @@ class StudentController extends Controller
         ]);
 
         return new StudentResource(
-            $student->fresh(),
+            $student->fresh()
         );
     }
 }
