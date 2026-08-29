@@ -12,7 +12,7 @@ class StudentResource extends JsonResource
         return [
             'uuid' => $this->uuid,
 
-            'photo_path' => $this->photo_path,
+            'has_photo' => (bool) $this->photo_path,
 
             'name' => $this->name,
 
