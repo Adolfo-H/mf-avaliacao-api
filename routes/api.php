@@ -3,14 +3,17 @@
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\EvaluatorController;
 use App\Http\Controllers\Api\V1\StudentController;
-use Illuminate\Http\JsonResponse;
+use App\Http\Controllers\Api\V1\StudentPhotoController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function (): void {
     /*
-     * Health check público.
-     */
-    Route::get('/health', function (): JsonResponse {
+    |--------------------------------------------------------------------------
+    | Health Check
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get('/health', function () {
         return response()->json([
             'status' => 'ok',
             'app' => 'MF Avaliação Física',
@@ -19,78 +22,108 @@ Route::prefix('v1')->group(function (): void {
     });
 
     /*
-     * Autenticação.
-     */
-    Route::prefix('auth')->group(function (): void {
-        Route::post(
-            '/login',
-            [AuthController::class, 'login'],
-        );
+    |--------------------------------------------------------------------------
+    | Autenticação
+    |--------------------------------------------------------------------------
+    */
 
-        Route::middleware('auth:sanctum')->group(
-            function (): void {
-                Route::get(
-                    '/me',
-                    [AuthController::class, 'me'],
-                );
-
-                Route::post(
-                    '/logout',
-                    [AuthController::class, 'logout'],
-                );
-            },
-        );
-    });
+    Route::post(
+        '/auth/login',
+        [AuthController::class, 'login']
+    );
 
     /*
-     * Rotas que exigem usuário autenticado.
-     */
-    Route::middleware('auth:sanctum')->group(
-        function (): void {
+    |--------------------------------------------------------------------------
+    | Rotas autenticadas
+    |--------------------------------------------------------------------------
+    */
+
+    Route::middleware('auth:sanctum')
+        ->group(function (): void {
             /*
-             * Alunos.
-             *
-             * Por enquanto qualquer usuário autenticado
-             * pode acessar estas rotas.
-             *
-             * Mais adiante refinaremos as permissões
-             * por perfil.
-             */
+            |--------------------------------------------------------------------------
+            | Usuário autenticado
+            |--------------------------------------------------------------------------
+            */
+
+            Route::get(
+                '/auth/me',
+                [AuthController::class, 'me']
+            );
+
+            Route::post(
+                '/auth/logout',
+                [AuthController::class, 'logout']
+            );
+
+            /*
+            |--------------------------------------------------------------------------
+            | Alunos
+            |--------------------------------------------------------------------------
+            */
+
             Route::patch(
                 '/students/{student}/status',
-                [
-                    StudentController::class,
-                    'updateStatus',
-                ],
+                [StudentController::class, 'updateStatus']
             );
 
             Route::apiResource(
                 'students',
-                StudentController::class,
+                StudentController::class
             )->except('destroy');
 
             /*
-             * Administração.
-             *
-             * Somente administrador pode gerenciar
-             * avaliadores.
-             */
-            Route::middleware('admin')->group(
-                function (): void {
+            |--------------------------------------------------------------------------
+            | Foto do aluno
+            |--------------------------------------------------------------------------
+            |
+            | POST   -> envia ou substitui a fotografia
+            | GET    -> consulta a fotografia privada
+            | DELETE -> remove a fotografia
+            |
+            */
+
+            Route::post(
+                '/students/{student}/photo',
+                [StudentPhotoController::class, 'store']
+            );
+
+            Route::get(
+                '/students/{student}/photo',
+                [StudentPhotoController::class, 'show']
+            );
+
+            Route::delete(
+                '/students/{student}/photo',
+                [StudentPhotoController::class, 'destroy']
+            );
+
+            /*
+            |--------------------------------------------------------------------------
+            | Administração
+            |--------------------------------------------------------------------------
+            */
+
+            Route::middleware('admin')
+                ->group(function (): void {
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Avaliadores
+                    |--------------------------------------------------------------------------
+                    */
+
                     Route::patch(
                         '/evaluators/{evaluator}/status',
                         [
                             EvaluatorController::class,
                             'updateStatus',
-                        ],
+                        ]
                     );
 
                     Route::apiResource(
                         'evaluators',
-                        EvaluatorController::class,
+                        EvaluatorController::class
                     )->except('destroy');
-                },
-            );
-        },
-    );
+                });
+        });
 });

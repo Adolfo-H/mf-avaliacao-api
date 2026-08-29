@@ -60,6 +60,15 @@ return [
             'report' => false,
         ],
 
+        'student_photos_local' => [
+            'driver' => 'local',
+            'root' => storage_path(
+                'app/private/student-photos'
+            ),
+            'visibility' => 'private',
+            'throw' => true,
+        ],
+
     ],
 
     /*
