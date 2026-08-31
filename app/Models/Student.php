@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
@@ -35,6 +36,13 @@ class Student extends Model
         'created_by',
         'updated_by',
     ];
+
+    public function assessments(): HasMany
+    {
+        return $this->hasMany(
+            Assessment::class
+        );
+    }
 
     protected function casts(): array
     {

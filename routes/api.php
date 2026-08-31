@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\V1\AssessmentController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\EvaluatorController;
 use App\Http\Controllers\Api\V1\StudentController;
@@ -7,12 +8,6 @@ use App\Http\Controllers\Api\V1\StudentPhotoController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function (): void {
-    /*
-    |--------------------------------------------------------------------------
-    | Health Check
-    |--------------------------------------------------------------------------
-    */
-
     Route::get('/health', function () {
         return response()->json([
             'status' => 'ok',
@@ -21,31 +16,13 @@ Route::prefix('v1')->group(function (): void {
         ]);
     });
 
-    /*
-    |--------------------------------------------------------------------------
-    | Autenticação
-    |--------------------------------------------------------------------------
-    */
-
     Route::post(
         '/auth/login',
         [AuthController::class, 'login']
     );
 
-    /*
-    |--------------------------------------------------------------------------
-    | Rotas autenticadas
-    |--------------------------------------------------------------------------
-    */
-
     Route::middleware('auth:sanctum')
         ->group(function (): void {
-            /*
-            |--------------------------------------------------------------------------
-            | Usuário autenticado
-            |--------------------------------------------------------------------------
-            */
-
             Route::get(
                 '/auth/me',
                 [AuthController::class, 'me']
@@ -64,7 +41,10 @@ Route::prefix('v1')->group(function (): void {
 
             Route::patch(
                 '/students/{student}/status',
-                [StudentController::class, 'updateStatus']
+                [
+                    StudentController::class,
+                    'updateStatus',
+                ]
             );
 
             Route::apiResource(
@@ -74,29 +54,52 @@ Route::prefix('v1')->group(function (): void {
 
             /*
             |--------------------------------------------------------------------------
-            | Foto do aluno
+            | Fotografias dos alunos
             |--------------------------------------------------------------------------
-            |
-            | POST   -> envia ou substitui a fotografia
-            | GET    -> consulta a fotografia privada
-            | DELETE -> remove a fotografia
-            |
             */
 
             Route::post(
                 '/students/{student}/photo',
-                [StudentPhotoController::class, 'store']
+                [
+                    StudentPhotoController::class,
+                    'store',
+                ]
             );
 
             Route::get(
                 '/students/{student}/photo',
-                [StudentPhotoController::class, 'show']
+                [
+                    StudentPhotoController::class,
+                    'show',
+                ]
             );
 
             Route::delete(
                 '/students/{student}/photo',
-                [StudentPhotoController::class, 'destroy']
+                [
+                    StudentPhotoController::class,
+                    'destroy',
+                ]
             );
+
+            /*
+            |--------------------------------------------------------------------------
+            | Avaliações físicas
+            |--------------------------------------------------------------------------
+            */
+
+            Route::post(
+                '/assessments/{assessment}/complete',
+                [
+                    AssessmentController::class,
+                    'complete',
+                ]
+            );
+
+            Route::apiResource(
+                'assessments',
+                AssessmentController::class
+            )->except('destroy');
 
             /*
             |--------------------------------------------------------------------------
@@ -106,12 +109,6 @@ Route::prefix('v1')->group(function (): void {
 
             Route::middleware('admin')
                 ->group(function (): void {
-                    /*
-                    |--------------------------------------------------------------------------
-                    | Avaliadores
-                    |--------------------------------------------------------------------------
-                    */
-
                     Route::patch(
                         '/evaluators/{evaluator}/status',
                         [
