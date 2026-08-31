@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\UserRole;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -54,5 +55,29 @@ class User extends Authenticatable
     public function isReception(): bool
     {
         return $this->role === UserRole::Reception;
+    }
+
+    public function assessmentsAsEvaluator(): HasMany
+    {
+        return $this->hasMany(
+            Assessment::class,
+            'evaluator_id'
+        );
+    }
+
+    public function assessmentsCreated(): HasMany
+    {
+        return $this->hasMany(
+            Assessment::class,
+            'created_by'
+        );
+    }
+
+    public function assessmentsUpdated(): HasMany
+    {
+        return $this->hasMany(
+            Assessment::class,
+            'updated_by'
+        );
     }
 }
