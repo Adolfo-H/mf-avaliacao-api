@@ -120,13 +120,12 @@ class AssessmentController extends Controller
                             'evaluator_id'
                         ]
                     ),
-                    fn ($query) =>
-                        $query->where(
-                            'evaluator_id',
-                            $validated[
-                                'evaluator_id'
-                            ]
-                        )
+                    fn ($query) => $query->where(
+                        'evaluator_id',
+                        $validated[
+                            'evaluator_id'
+                        ]
+                    )
                 )
                 ->when(
                     ! empty(
@@ -134,13 +133,12 @@ class AssessmentController extends Controller
                             'status'
                         ]
                     ),
-                    fn ($query) =>
-                        $query->where(
-                            'status',
-                            $validated[
-                                'status'
-                            ]
-                        )
+                    fn ($query) => $query->where(
+                        'status',
+                        $validated[
+                            'status'
+                        ]
+                    )
                 )
                 ->when(
                     ! empty(
@@ -148,14 +146,13 @@ class AssessmentController extends Controller
                             'date_from'
                         ]
                     ),
-                    fn ($query) =>
-                        $query->whereDate(
-                            'evaluation_date',
-                            '>=',
-                            $validated[
-                                'date_from'
-                            ]
-                        )
+                    fn ($query) => $query->whereDate(
+                        'evaluation_date',
+                        '>=',
+                        $validated[
+                            'date_from'
+                        ]
+                    )
                 )
                 ->when(
                     ! empty(
@@ -163,14 +160,13 @@ class AssessmentController extends Controller
                             'date_to'
                         ]
                     ),
-                    fn ($query) =>
-                        $query->whereDate(
-                            'evaluation_date',
-                            '<=',
-                            $validated[
-                                'date_to'
-                            ]
-                        )
+                    fn ($query) => $query->whereDate(
+                        'evaluation_date',
+                        '<=',
+                        $validated[
+                            'date_to'
+                        ]
+                    )
                 )
                 ->orderByDesc(
                     'evaluation_date'
@@ -208,34 +204,27 @@ class AssessmentController extends Controller
                     $request
                 ): Assessment {
                     return Assessment::create([
-                        'student_id' =>
-                            $student->id,
+                        'student_id' => $student->id,
 
-                        'evaluator_id' =>
-                            $data[
+                        'evaluator_id' => $data[
                                 'evaluator_id'
                             ],
 
-                        'evaluation_date' =>
-                            $data[
+                        'evaluation_date' => $data[
                                 'evaluation_date'
                             ],
 
-                        'status' =>
-                            AssessmentStatus::Draft,
+                        'status' => AssessmentStatus::Draft,
 
-                        'completed_at' =>
-                            null,
+                        'completed_at' => null,
 
-                        'created_by' =>
-                            $request
-                                ->user()
-                                ->id,
+                        'created_by' => $request
+                            ->user()
+                            ->id,
 
-                        'updated_by' =>
-                            $request
-                                ->user()
-                                ->id,
+                        'updated_by' => $request
+                            ->user()
+                            ->id,
                     ]);
                 }
             );
@@ -380,16 +369,13 @@ class AssessmentController extends Controller
                 $request
             ): void {
                 $assessment->update([
-                    'status' =>
-                        AssessmentStatus::Completed,
+                    'status' => AssessmentStatus::Completed,
 
-                    'completed_at' =>
-                        now(),
+                    'completed_at' => now(),
 
-                    'updated_by' =>
-                        $request
-                            ->user()
-                            ->id,
+                    'updated_by' => $request
+                        ->user()
+                        ->id,
                 ]);
             }
         );
