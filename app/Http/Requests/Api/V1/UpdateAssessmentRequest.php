@@ -44,17 +44,13 @@ class UpdateAssessmentRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'student_uuid.exists' =>
-                'O aluno informado não está disponível.',
+            'student_uuid.exists' => 'O aluno informado não está disponível.',
 
-            'evaluator_id.exists' =>
-                'O avaliador informado não está disponível.',
+            'evaluator_id.exists' => 'O avaliador informado não está disponível.',
 
-            'evaluation_date.date_format' =>
-                'A data da avaliação deve estar no formato AAAA-MM-DD.',
+            'evaluation_date.date_format' => 'A data da avaliação deve estar no formato AAAA-MM-DD.',
 
-            'evaluation_date.before_or_equal' =>
-                'A data da avaliação não pode ser futura.',
+            'evaluation_date.before_or_equal' => 'A data da avaliação não pode ser futura.',
         ];
     }
 }

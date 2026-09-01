@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\V1\AssessmentController;
+use App\Http\Controllers\Api\V1\AssessmentEvaluatorController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\EvaluatorController;
 use App\Http\Controllers\Api\V1\StudentController;
@@ -87,6 +88,14 @@ Route::prefix('v1')->group(function (): void {
             | Avaliações físicas
             |--------------------------------------------------------------------------
             */
+
+            Route::get(
+                '/assessment-evaluators',
+                [
+                    AssessmentEvaluatorController::class,
+                    'index',
+                ]
+            );
 
             Route::post(
                 '/assessments/{assessment}/complete',

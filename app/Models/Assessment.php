@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use App\Enums\AssessmentSectionStatus;
+use App\Enums\AssessmentSectionType;
 use App\Enums\AssessmentStatus;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 
 class Assessment extends Model
@@ -18,6 +21,17 @@ class Assessment extends Model
         'completed_at',
         'created_by',
         'updated_by',
+    ];
+
+    /*
+     * Cada avaliação possui somente
+     * sete registros de seção.
+     *
+     * Portanto podemos carregá-los
+     * sempre junto da avaliação.
+     */
+    protected $with = [
+        'sections',
     ];
 
     protected function casts(): array
@@ -34,11 +48,47 @@ class Assessment extends Model
     protected static function booted(): void
     {
         static::creating(
-            function (Assessment $assessment): void {
-                if (! $assessment->uuid) {
+            function (
+                Assessment $assessment
+            ): void {
+                if (
+                    ! $assessment->uuid
+                ) {
                     $assessment->uuid =
                         (string) Str::uuid();
                 }
+            }
+        );
+
+        /*
+         * Toda nova avaliação já nasce
+         * com suas sete seções.
+         */
+        static::created(
+            function (
+                Assessment $assessment
+            ): void {
+                $sections = [];
+
+                foreach (
+                    AssessmentSectionType::cases() as $section
+                ) {
+                    $sections[] = [
+                        'section' => $section->value,
+
+                        'status' => AssessmentSectionStatus::NotStarted
+                            ->value,
+
+                        'updated_by' => $assessment->updated_by
+                            ?? $assessment->created_by,
+                    ];
+                }
+
+                $assessment
+                    ->sections()
+                    ->createMany(
+                        $sections
+                    );
             }
         );
     }
@@ -76,6 +126,13 @@ class Assessment extends Model
         return $this->belongsTo(
             User::class,
             'updated_by'
+        );
+    }
+
+    public function sections(): HasMany
+    {
+        return $this->hasMany(
+            AssessmentSection::class
         );
     }
 
