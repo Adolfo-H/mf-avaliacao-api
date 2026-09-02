@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Str;
 
 class Assessment extends Model
@@ -174,6 +175,20 @@ class Assessment extends Model
 
         return $this->student->ageAt(
             $this->evaluation_date
+        );
+    }
+
+    public function anamnesis(): HasOne
+    {
+        return $this->hasOne(
+            AssessmentAnamnesis::class
+        );
+    }
+
+    public function parqAnswers(): HasMany
+    {
+        return $this->hasMany(
+            AssessmentParqAnswer::class
         );
     }
 }

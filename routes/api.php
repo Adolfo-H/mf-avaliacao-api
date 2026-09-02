@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\V1\AssessmentAnamnesisController;
 use App\Http\Controllers\Api\V1\AssessmentController;
 use App\Http\Controllers\Api\V1\AssessmentEvaluatorController;
 use App\Http\Controllers\Api\V1\AuthController;
@@ -109,6 +110,22 @@ Route::prefix('v1')->group(function (): void {
                 'assessments',
                 AssessmentController::class
             )->except('destroy');
+
+            Route::get(
+                '/assessments/{assessment}/anamnesis',
+                [
+                    AssessmentAnamnesisController::class,
+                    'show',
+                ]
+            );
+
+            Route::put(
+                '/assessments/{assessment}/anamnesis',
+                [
+                    AssessmentAnamnesisController::class,
+                    'update',
+                ]
+            );
 
             /*
             |--------------------------------------------------------------------------
