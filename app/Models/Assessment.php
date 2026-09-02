@@ -24,13 +24,6 @@ class Assessment extends Model
         'updated_by',
     ];
 
-    /*
-     * Cada avaliação possui somente
-     * sete registros de seção.
-     *
-     * Portanto podemos carregá-los
-     * sempre junto da avaliação.
-     */
     protected $with = [
         'sections',
     ];
@@ -52,19 +45,13 @@ class Assessment extends Model
             function (
                 Assessment $assessment
             ): void {
-                if (
-                    ! $assessment->uuid
-                ) {
+                if (! $assessment->uuid) {
                     $assessment->uuid =
                         (string) Str::uuid();
                 }
             }
         );
 
-        /*
-         * Toda nova avaliação já nasce
-         * com suas sete seções.
-         */
         static::created(
             function (
                 Assessment $assessment
@@ -137,6 +124,27 @@ class Assessment extends Model
         );
     }
 
+    public function anamnesis(): HasOne
+    {
+        return $this->hasOne(
+            AssessmentAnamnesis::class
+        );
+    }
+
+    public function parqAnswers(): HasMany
+    {
+        return $this->hasMany(
+            AssessmentParqAnswer::class
+        );
+    }
+
+    public function bodyComposition(): HasOne
+    {
+        return $this->hasOne(
+            AssessmentBodyComposition::class
+        );
+    }
+
     public function scopeDraft(
         Builder $query
     ): Builder {
@@ -175,20 +183,6 @@ class Assessment extends Model
 
         return $this->student->ageAt(
             $this->evaluation_date
-        );
-    }
-
-    public function anamnesis(): HasOne
-    {
-        return $this->hasOne(
-            AssessmentAnamnesis::class
-        );
-    }
-
-    public function parqAnswers(): HasMany
-    {
-        return $this->hasMany(
-            AssessmentParqAnswer::class
         );
     }
 }
