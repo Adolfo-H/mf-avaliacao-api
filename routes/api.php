@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\V1\AssessmentAnamnesisController;
+use App\Http\Controllers\Api\V1\AssessmentAnthropometryController;
 use App\Http\Controllers\Api\V1\AssessmentBodyCompositionController;
 use App\Http\Controllers\Api\V1\AssessmentController;
 use App\Http\Controllers\Api\V1\AssessmentEvaluatorController;
@@ -201,6 +202,28 @@ Route::prefix('v1')->group(function (): void {
                     '/assessments/{assessment}/body-composition',
                     [
                         AssessmentBodyCompositionController::class,
+                        'update',
+                    ]
+                );
+
+                /*
+                |--------------------------------------------------------------------------
+                | Perímetros e antropometria
+                |--------------------------------------------------------------------------
+                */
+
+                Route::get(
+                    '/assessments/{assessment}/anthropometry',
+                    [
+                        AssessmentAnthropometryController::class,
+                        'show',
+                    ]
+                );
+
+                Route::put(
+                    '/assessments/{assessment}/anthropometry',
+                    [
+                        AssessmentAnthropometryController::class,
                         'update',
                     ]
                 );

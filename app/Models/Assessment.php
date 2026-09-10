@@ -145,6 +145,13 @@ class Assessment extends Model
         );
     }
 
+    public function anthropometry(): HasOne
+    {
+        return $this->hasOne(
+            AssessmentAnthropometry::class
+        );
+    }
+
     public function scopeDraft(
         Builder $query
     ): Builder {

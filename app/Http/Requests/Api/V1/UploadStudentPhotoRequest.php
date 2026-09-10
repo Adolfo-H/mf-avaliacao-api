@@ -14,15 +14,9 @@ class UploadStudentPhotoRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'photo' => [
+            'photo_base64' => [
                 'required',
-                'file',
-                'image',
-                'mimes:jpg,jpeg,png,webp',
-                'max:'.config(
-                    'student-photos.max_size_kb',
-                    5120
-                ),
+                'string',
             ],
         ];
     }
@@ -30,15 +24,11 @@ class UploadStudentPhotoRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'photo.required' => 'Selecione uma fotografia.',
+            'photo_base64.required' =>
+                'Selecione uma fotografia.',
 
-            'photo.file' => 'A fotografia enviada é inválida.',
-
-            'photo.image' => 'O arquivo precisa ser uma imagem válida.',
-
-            'photo.mimes' => 'A fotografia deve estar em JPG, PNG ou WEBP.',
-
-            'photo.max' => 'A fotografia pode possuir no máximo 5 MB.',
+            'photo_base64.string' =>
+                'A fotografia enviada é inválida.',
         ];
     }
 }
