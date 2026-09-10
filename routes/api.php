@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\V1\AssessmentAnamnesisController;
 use App\Http\Controllers\Api\V1\AssessmentAnthropometryController;
 use App\Http\Controllers\Api\V1\AssessmentBodyCompositionController;
 use App\Http\Controllers\Api\V1\AssessmentController;
+use App\Http\Controllers\Api\V1\AssessmentVo2MaxController;
 use App\Http\Controllers\Api\V1\AssessmentEvaluatorController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\EvaluatorController;
@@ -224,6 +225,28 @@ Route::prefix('v1')->group(function (): void {
                     '/assessments/{assessment}/anthropometry',
                     [
                         AssessmentAnthropometryController::class,
+                        'update',
+                    ]
+                );
+
+                /*
+                |--------------------------------------------------------------------------
+                | VO2Max
+                |--------------------------------------------------------------------------
+                */
+
+                Route::get(
+                    '/assessments/{assessment}/vo2-max',
+                    [
+                        AssessmentVo2MaxController::class,
+                        'show',
+                    ]
+                );
+
+                Route::put(
+                    '/assessments/{assessment}/vo2-max',
+                    [
+                        AssessmentVo2MaxController::class,
                         'update',
                     ]
                 );

@@ -152,6 +152,13 @@ class Assessment extends Model
         );
     }
 
+    public function vo2Max(): HasOne
+    {
+        return $this->hasOne(
+            AssessmentVo2Max::class
+        );
+    }
+
     public function scopeDraft(
         Builder $query
     ): Builder {
