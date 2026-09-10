@@ -4,6 +4,9 @@ use App\Http\Controllers\Api\V1\AssessmentAnamnesisController;
 use App\Http\Controllers\Api\V1\AssessmentAnthropometryController;
 use App\Http\Controllers\Api\V1\AssessmentBodyCompositionController;
 use App\Http\Controllers\Api\V1\AssessmentController;
+use App\Http\Controllers\Api\V1\AssessmentProgressPhotoController;
+use App\Http\Controllers\Api\V1\AssessmentPhotoConsentController;
+use App\Http\Controllers\Api\V1\AssessmentNeuromotorTestController;
 use App\Http\Controllers\Api\V1\AssessmentVo2MaxController;
 use App\Http\Controllers\Api\V1\AssessmentEvaluatorController;
 use App\Http\Controllers\Api\V1\AuthController;
@@ -248,6 +251,90 @@ Route::prefix('v1')->group(function (): void {
                     [
                         AssessmentVo2MaxController::class,
                         'update',
+                    ]
+                );
+
+                /*
+                |--------------------------------------------------------------------------
+                | Testes neuromotores
+                |--------------------------------------------------------------------------
+                */
+
+                Route::get(
+                    '/assessments/{assessment}/neuromotor-tests',
+                    [
+                        AssessmentNeuromotorTestController::class,
+                        'show',
+                    ]
+                );
+
+                Route::put(
+                    '/assessments/{assessment}/neuromotor-tests',
+                    [
+                        AssessmentNeuromotorTestController::class,
+                        'update',
+                    ]
+                );
+
+                /*
+                |--------------------------------------------------------------------------
+                | Fotos de evolução
+                |--------------------------------------------------------------------------
+                */
+
+                Route::get(
+                    '/assessments/{assessment}/progress-photos',
+                    [
+                        AssessmentProgressPhotoController::class,
+                        'index',
+                    ]
+                );
+
+                Route::put(
+                    '/assessments/{assessment}/progress-photos/consent',
+                    [
+                        AssessmentPhotoConsentController::class,
+                        'update',
+                    ]
+                );
+
+                Route::delete(
+                    '/assessments/{assessment}/progress-photos/consent',
+                    [
+                        AssessmentPhotoConsentController::class,
+                        'destroy',
+                    ]
+                );
+
+                Route::post(
+                    '/assessments/{assessment}/progress-photos/{position}',
+                    [
+                        AssessmentProgressPhotoController::class,
+                        'store',
+                    ]
+                );
+
+                Route::get(
+                    '/assessments/{assessment}/progress-photos/{position}',
+                    [
+                        AssessmentProgressPhotoController::class,
+                        'show',
+                    ]
+                );
+
+                Route::patch(
+                    '/assessments/{assessment}/progress-photos/{position}',
+                    [
+                        AssessmentProgressPhotoController::class,
+                        'update',
+                    ]
+                );
+
+                Route::delete(
+                    '/assessments/{assessment}/progress-photos/{position}',
+                    [
+                        AssessmentProgressPhotoController::class,
+                        'destroy',
                     ]
                 );
 
