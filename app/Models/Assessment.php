@@ -159,6 +159,27 @@ class Assessment extends Model
         );
     }
 
+    public function neuromotorTests(): HasOne
+    {
+        return $this->hasOne(
+            AssessmentNeuromotorTest::class
+        );
+    }
+
+    public function photoConsent(): HasOne
+    {
+        return $this->hasOne(
+            AssessmentPhotoConsent::class
+        );
+    }
+
+    public function progressPhotos(): HasMany
+    {
+        return $this->hasMany(
+            AssessmentProgressPhoto::class
+        );
+    }
+
     public function scopeDraft(
         Builder $query
     ): Builder {
