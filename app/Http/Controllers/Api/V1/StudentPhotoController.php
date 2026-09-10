@@ -24,45 +24,67 @@ class StudentPhotoController extends Controller
 
         $disk = Storage::disk($diskName);
 
-        $file = $request->file('photo');
+        $base64 = $request->string(
+            'photo_base64'
+        )->toString();
 
-        $extension = strtolower(
-            $file->extension()
+        $binary = base64_decode(
+            $base64,
+            true
         );
 
+        if ($binary === false) {
+            abort(
+                422,
+                'A fotografia enviada é inválida.'
+            );
+        }
+
+        $maxBytes =
+            ((int) config(
+                'student-photos.max_size_kb',
+                5120
+            )) * 1024;
+
+        if (strlen($binary) > $maxBytes) {
+            abort(
+                422,
+                'A fotografia pode possuir no máximo 5 MB.'
+            );
+        }
+
+        $imageInfo =
+            @getimagesizefromstring(
+                $binary
+            );
+
+        if (
+            $imageInfo === false ||
+            ($imageInfo['mime'] ?? null)
+                !== 'image/jpeg'
+        ) {
+            abort(
+                422,
+                'A fotografia enviada não é uma imagem JPG válida.'
+            );
+        }
+
         $newPath = sprintf(
-            'students/%s/%s.%s',
+            'students/%s/%s.jpg',
             $student->uuid,
-            Str::uuid(),
-            $extension
+            Str::uuid()
         );
 
         $oldPath = $student->photo_path;
 
         try {
-            $stream = fopen(
-                $file->getRealPath(),
-                'r'
+            $stored = $disk->put(
+                $newPath,
+                $binary,
+                [
+                    'visibility' => 'private',
+                ]
             );
-
-            if ($stream === false) {
-                abort(
-                    500,
-                    'Não foi possível processar a fotografia.'
-                );
-            }
-
-            try {
-                $stored = $disk->put(
-                    $newPath,
-                    $stream,
-                    [
-                        'visibility' => 'private',
-                    ]
-                );
-            } finally {
-                fclose($stream);
-            }
 
             if (! $stored) {
                 abort(
@@ -73,7 +95,9 @@ class StudentPhotoController extends Controller
 
             $student->update([
                 'photo_path' => $newPath,
-                'updated_by' => $request->user()->id,
+
+                'updated_by' =>
+                    $request->user()->id,
             ]);
         } catch (Throwable $exception) {
             if ($disk->exists($newPath)) {
@@ -128,9 +152,11 @@ class StudentPhotoController extends Controller
             $student->photo_path,
             null,
             [
-                'Cache-Control' => 'private, max-age=300',
+                'Cache-Control' =>
+                    'private, max-age=300',
 
-                'X-Content-Type-Options' => 'nosniff',
+                'X-Content-Type-Options' =>
+                    'nosniff',
             ]
         );
     }
@@ -155,7 +181,9 @@ class StudentPhotoController extends Controller
 
         $student->update([
             'photo_path' => null,
-            'updated_by' => request()->user()->id,
+
+            'updated_by' =>
+                request()->user()->id,
         ]);
 
         if ($disk->exists($oldPath)) {
