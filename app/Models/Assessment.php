@@ -180,6 +180,20 @@ class Assessment extends Model
         );
     }
 
+    public function posturalAssessment(): HasOne
+    {
+        return $this->hasOne(
+            AssessmentPosturalAssessment::class
+        );
+    }
+
+    public function posturalPhotos(): HasMany
+    {
+        return $this->hasMany(
+            AssessmentPosturalPhoto::class
+        );
+    }
+
     public function scopeDraft(
         Builder $query
     ): Builder {

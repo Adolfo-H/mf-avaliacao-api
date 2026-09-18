@@ -4,6 +4,9 @@ use App\Http\Controllers\Api\V1\AssessmentAnamnesisController;
 use App\Http\Controllers\Api\V1\AssessmentAnthropometryController;
 use App\Http\Controllers\Api\V1\AssessmentBodyCompositionController;
 use App\Http\Controllers\Api\V1\AssessmentController;
+use App\Http\Controllers\Api\V1\AssessmentSectionController;
+use App\Http\Controllers\Api\V1\AssessmentPosturalPhotoController;
+use App\Http\Controllers\Api\V1\AssessmentPosturalAssessmentController;
 use App\Http\Controllers\Api\V1\AssessmentProgressPhotoController;
 use App\Http\Controllers\Api\V1\AssessmentPhotoConsentController;
 use App\Http\Controllers\Api\V1\AssessmentNeuromotorTestController;
@@ -164,6 +167,28 @@ Route::prefix('v1')->group(function (): void {
                     AssessmentController::class
                 )->except(
                     'destroy'
+                );
+
+                /*
+                |--------------------------------------------------------------------------
+                | Status das seções
+                |--------------------------------------------------------------------------
+                */
+
+                Route::post(
+                    '/assessments/{assessment}/sections/{section}/complete',
+                    [
+                        AssessmentSectionController::class,
+                        'complete',
+                    ]
+                );
+
+                Route::post(
+                    '/assessments/{assessment}/sections/{section}/reopen',
+                    [
+                        AssessmentSectionController::class,
+                        'reopen',
+                    ]
                 );
 
                 /*
@@ -334,6 +359,60 @@ Route::prefix('v1')->group(function (): void {
                     '/assessments/{assessment}/progress-photos/{position}',
                     [
                         AssessmentProgressPhotoController::class,
+                        'destroy',
+                    ]
+                );
+
+                /*
+                |--------------------------------------------------------------------------
+                | Avaliação postural
+                |--------------------------------------------------------------------------
+                */
+
+                Route::get(
+                    '/assessments/{assessment}/postural-assessment',
+                    [
+                        AssessmentPosturalAssessmentController::class,
+                        'show',
+                    ]
+                );
+
+                Route::put(
+                    '/assessments/{assessment}/postural-assessment',
+                    [
+                        AssessmentPosturalAssessmentController::class,
+                        'update',
+                    ]
+                );
+
+                Route::post(
+                    '/assessments/{assessment}/postural-assessment/photos/{position}',
+                    [
+                        AssessmentPosturalPhotoController::class,
+                        'store',
+                    ]
+                );
+
+                Route::get(
+                    '/assessments/{assessment}/postural-assessment/photos/{position}',
+                    [
+                        AssessmentPosturalPhotoController::class,
+                        'show',
+                    ]
+                );
+
+                Route::patch(
+                    '/assessments/{assessment}/postural-assessment/photos/{position}',
+                    [
+                        AssessmentPosturalPhotoController::class,
+                        'update',
+                    ]
+                );
+
+                Route::delete(
+                    '/assessments/{assessment}/postural-assessment/photos/{position}',
+                    [
+                        AssessmentPosturalPhotoController::class,
                         'destroy',
                     ]
                 );
