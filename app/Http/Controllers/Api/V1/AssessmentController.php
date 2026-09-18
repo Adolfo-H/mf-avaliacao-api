@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Enums\AssessmentStatus;
+use App\Enums\AssessmentSectionStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\StoreAssessmentRequest;
 use App\Http\Requests\Api\V1\UpdateAssessmentRequest;
@@ -10,6 +11,7 @@ use App\Http\Resources\Api\V1\AssessmentResource;
 use App\Models\Assessment;
 use App\Models\Student;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -351,7 +353,7 @@ class AssessmentController extends Controller
     public function complete(
         Request $request,
         Assessment $assessment
-    ): AssessmentResource {
+    ): AssessmentResource|JsonResponse {
         if ($assessment->isCompleted()) {
             return new AssessmentResource(
                 $assessment->load([
@@ -359,8 +361,59 @@ class AssessmentController extends Controller
                     'evaluator',
                     'createdBy',
                     'updatedBy',
+                    'sections',
                 ])
             );
+        }
+
+        $assessment->load(
+            'sections'
+        );
+
+        $incompleteSections =
+            $assessment
+                ->sections
+                ->filter(
+                    fn ($section): bool =>
+                        $section->status !==
+                        AssessmentSectionStatus::Completed
+                )
+                ->map(
+                    fn ($section): array => [
+                        'key' =>
+                            $section
+                                ->section
+                                ->value,
+
+                        'label' =>
+                            $section
+                                ->section
+                                ->label(),
+
+                        'status' =>
+                            $section
+                                ->status
+                                ->value,
+
+                        'status_label' =>
+                            $section
+                                ->status
+                                ->label(),
+                    ]
+                )
+                ->values();
+
+        if (
+            $incompleteSections
+                ->isNotEmpty()
+        ) {
+            return response()->json([
+                'message' =>
+                    'Conclua todas as seções antes de finalizar a avaliação.',
+
+                'pending_sections' =>
+                    $incompleteSections,
+            ], 422);
         }
 
         DB::transaction(
@@ -369,13 +422,16 @@ class AssessmentController extends Controller
                 $request
             ): void {
                 $assessment->update([
-                    'status' => AssessmentStatus::Completed,
+                    'status' =>
+                        AssessmentStatus::Completed,
 
-                    'completed_at' => now(),
+                    'completed_at' =>
+                        now(),
 
-                    'updated_by' => $request
-                        ->user()
-                        ->id,
+                    'updated_by' =>
+                        $request
+                            ->user()
+                            ->id,
                 ]);
             }
         );
@@ -388,7 +444,9 @@ class AssessmentController extends Controller
                     'evaluator',
                     'createdBy',
                     'updatedBy',
+                    'sections',
                 ])
         );
     }
+
 }
