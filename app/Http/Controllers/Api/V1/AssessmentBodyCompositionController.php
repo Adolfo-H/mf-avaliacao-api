@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Enums\AssessmentSectionStatus;
 use App\Enums\AssessmentSectionType;
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Api\V1\Concerns\EnsuresAssessmentSectionIsEditable;
 use App\Http\Requests\Api\V1\UpdateAssessmentBodyCompositionRequest;
 use App\Models\Assessment;
 use Illuminate\Http\JsonResponse;
@@ -12,6 +13,8 @@ use Illuminate\Support\Facades\DB;
 
 class AssessmentBodyCompositionController extends Controller
 {
+    use EnsuresAssessmentSectionIsEditable;
+
     public function show(
         Assessment $assessment
     ): JsonResponse {
@@ -31,12 +34,10 @@ class AssessmentBodyCompositionController extends Controller
         UpdateAssessmentBodyCompositionRequest $request,
         Assessment $assessment
     ): JsonResponse {
-        if ($assessment->isCompleted()) {
-            abort(
-                422,
-                'Avaliações concluídas não podem ser alteradas.'
-            );
-        }
+        $this->ensureAssessmentSectionEditable(
+            $assessment,
+            AssessmentSectionType::BodyComposition
+        );
 
         $data =
             $request->validated();

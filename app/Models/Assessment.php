@@ -224,6 +224,49 @@ class Assessment extends Model
             AssessmentStatus::Completed;
     }
 
+    public function hasStartedContent(): bool
+    {
+        if (
+            $this
+                ->sections()
+                ->where(
+                    'status',
+                    '!=',
+                    AssessmentSectionStatus::NotStarted->value
+                )
+                ->exists()
+        ) {
+            return true;
+        }
+
+        $clinicalRelations = [
+            'anamnesis',
+            'parqAnswers',
+            'bodyComposition',
+            'anthropometry',
+            'vo2Max',
+            'neuromotorTests',
+            'photoConsent',
+            'progressPhotos',
+            'posturalAssessment',
+            'posturalPhotos',
+        ];
+
+        foreach (
+            $clinicalRelations as $relation
+        ) {
+            if (
+                $this
+                    ->{$relation}()
+                    ->exists()
+            ) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public function ageAtEvaluation(): ?int
     {
         if (! $this->student) {

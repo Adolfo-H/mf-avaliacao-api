@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Enums\AssessmentStatus;
 use App\Enums\AssessmentSectionStatus;
+use App\Enums\AssessmentSectionType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\StoreAssessmentRequest;
 use App\Http\Requests\Api\V1\UpdateAssessmentRequest;
@@ -268,6 +269,57 @@ class AssessmentController extends Controller
         $data =
             $request->validated();
 
+        $studentChangeRequested =
+            false;
+
+        if (
+            array_key_exists(
+                'student_uuid',
+                $data
+            )
+        ) {
+            $requestedStudent =
+                Student::query()
+                    ->where(
+                        'uuid',
+                        $data[
+                            'student_uuid'
+                        ]
+                    )
+                    ->firstOrFail();
+
+            $studentChangeRequested =
+                $requestedStudent->id !==
+                $assessment->student_id;
+        }
+
+        $dateChangeRequested =
+            array_key_exists(
+                'evaluation_date',
+                $data
+            )
+            &&
+            $data['evaluation_date'] !==
+                $assessment
+                    ->evaluation_date
+                    ->format('Y-m-d');
+
+        $identityChangeRequested =
+            $studentChangeRequested
+            || $dateChangeRequested;
+
+        if (
+            $identityChangeRequested
+            &&
+            $assessment
+                ->hasStartedContent()
+        ) {
+            abort(
+                422,
+                'Aluno e data da avaliação não podem ser alterados após o início do preenchimento.'
+            );
+        }
+
         DB::transaction(
             function () use (
                 $data,
@@ -369,6 +421,72 @@ class AssessmentController extends Controller
         $assessment->load(
             'sections'
         );
+
+
+        $expectedSections =
+            collect(
+                AssessmentSectionType::cases()
+            )
+                ->map(
+                    fn (
+                        AssessmentSectionType $section
+                    ): string =>
+                        $section->value
+                )
+                ->values();
+
+        $actualSections =
+            $assessment
+                ->sections
+                ->map(
+                    fn ($section): string =>
+                        $section
+                            ->section
+                            ->value
+                )
+                ->values();
+
+        $missingSections =
+            $expectedSections
+                ->diff($actualSections)
+                ->values();
+
+        $unexpectedSections =
+            $actualSections
+                ->diff($expectedSections)
+                ->values();
+
+        $hasInvalidSectionStructure =
+            $missingSections->isNotEmpty()
+            || $unexpectedSections->isNotEmpty()
+            || $actualSections->count()
+                !== $expectedSections->count()
+            || $actualSections
+                ->unique()
+                ->count()
+                !== $actualSections->count();
+
+        if ($hasInvalidSectionStructure) {
+            return response()->json(
+                [
+                    'message' =>
+                        'A avaliação está inconsistente: todas as seções obrigatórias precisam existir antes da conclusão.',
+
+                    'missing_sections' =>
+                        $missingSections->all(),
+
+                    'unexpected_sections' =>
+                        $unexpectedSections->all(),
+
+                    'expected_section_count' =>
+                        $expectedSections->count(),
+
+                    'actual_section_count' =>
+                        $actualSections->count(),
+                ],
+                422
+            );
+        }
 
         $incompleteSections =
             $assessment

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Enums\AssessmentSectionStatus;
 use App\Enums\AssessmentSectionType;
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Api\V1\Concerns\EnsuresAssessmentSectionIsEditable;
 use App\Http\Requests\Api\V1\UpdateAssessmentPosturalAssessmentRequest;
 use App\Models\Assessment;
 use Illuminate\Http\JsonResponse;
@@ -12,6 +13,8 @@ use Illuminate\Support\Facades\DB;
 
 class AssessmentPosturalAssessmentController extends Controller
 {
+    use EnsuresAssessmentSectionIsEditable;
+
     private const LATERAL = [
         'hip_anteversion' =>
             'Anteversão de quadril',
@@ -160,12 +163,10 @@ class AssessmentPosturalAssessmentController extends Controller
         UpdateAssessmentPosturalAssessmentRequest $request,
         Assessment $assessment
     ): JsonResponse {
-        if ($assessment->isCompleted()) {
-            abort(
-                422,
-                'Avaliações concluídas não podem ser alteradas.'
-            );
-        }
+        $this->ensureAssessmentSectionEditable(
+            $assessment,
+            AssessmentSectionType::PosturalAssessment
+        );
 
         $data =
             $request->validated();
