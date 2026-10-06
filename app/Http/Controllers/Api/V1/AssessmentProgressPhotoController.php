@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Enums\AssessmentSectionStatus;
 use App\Enums\AssessmentSectionType;
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Api\V1\Concerns\EnsuresAssessmentSectionIsEditable;
 use App\Http\Requests\Api\V1\UpdateAssessmentProgressPhotoRequest;
 use App\Http\Requests\Api\V1\UploadAssessmentProgressPhotoRequest;
 use App\Models\Assessment;
@@ -18,6 +19,8 @@ use Throwable;
 
 class AssessmentProgressPhotoController extends Controller
 {
+    use EnsuresAssessmentSectionIsEditable;
+
     private const POSITIONS = [
         'front' =>
             'Frontal',
@@ -58,12 +61,10 @@ class AssessmentProgressPhotoController extends Controller
             $position
         );
 
-        if ($assessment->isCompleted()) {
-            abort(
-                422,
-                'Avaliações concluídas não podem ser alteradas.'
-            );
-        }
+        $this->ensureAssessmentSectionEditable(
+            $assessment,
+            AssessmentSectionType::ProgressPhotos
+        );
 
         $assessment->load([
             'photoConsent',
@@ -362,12 +363,10 @@ class AssessmentProgressPhotoController extends Controller
             $position
         );
 
-        if ($assessment->isCompleted()) {
-            abort(
-                422,
-                'Avaliações concluídas não podem ser alteradas.'
-            );
-        }
+        $this->ensureAssessmentSectionEditable(
+            $assessment,
+            AssessmentSectionType::ProgressPhotos
+        );
 
         $photo =
             $assessment
@@ -406,12 +405,10 @@ class AssessmentProgressPhotoController extends Controller
             $position
         );
 
-        if ($assessment->isCompleted()) {
-            abort(
-                422,
-                'Avaliações concluídas não podem ser alteradas.'
-            );
-        }
+        $this->ensureAssessmentSectionEditable(
+            $assessment,
+            AssessmentSectionType::ProgressPhotos
+        );
 
         $photo =
             $assessment
