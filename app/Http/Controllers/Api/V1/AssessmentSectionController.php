@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\V1\AssessmentResource;
 use App\Models\Assessment;
 use App\Models\AssessmentSection;
+use App\Support\AuditLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -41,6 +42,10 @@ class AssessmentSectionController extends Controller
             );
         }
 
+        $previousStatus =
+            $assessmentSection
+                ->status;
+
         DB::transaction(
             function () use (
                 $assessment,
@@ -64,6 +69,37 @@ class AssessmentSectionController extends Controller
                 ]);
             }
         );
+
+        if (
+            $previousStatus !==
+            AssessmentSectionStatus::Completed
+        ) {
+            AuditLogger::record(
+                $request,
+                'assessment.section.complete',
+                subject:
+                    $assessmentSection,
+                assessmentId:
+                    $assessment->id,
+                studentId:
+                    $assessment
+                        ->student_id,
+                metadata: [
+                    'section' =>
+                        $assessmentSection
+                            ->section
+                            ->value,
+
+                    'old_status' =>
+                        $previousStatus
+                            ->value,
+
+                    'new_status' =>
+                        AssessmentSectionStatus::Completed
+                            ->value,
+                ]
+            );
+        }
 
         return $this->resource(
             $assessment
@@ -98,6 +134,10 @@ class AssessmentSectionController extends Controller
             );
         }
 
+        $previousStatus =
+            $assessmentSection
+                ->status;
+
         DB::transaction(
             function () use (
                 $assessment,
@@ -121,6 +161,37 @@ class AssessmentSectionController extends Controller
                 ]);
             }
         );
+
+        if (
+            $previousStatus !==
+            AssessmentSectionStatus::InProgress
+        ) {
+            AuditLogger::record(
+                $request,
+                'assessment.section.reopen',
+                subject:
+                    $assessmentSection,
+                assessmentId:
+                    $assessment->id,
+                studentId:
+                    $assessment
+                        ->student_id,
+                metadata: [
+                    'section' =>
+                        $assessmentSection
+                            ->section
+                            ->value,
+
+                    'old_status' =>
+                        $previousStatus
+                            ->value,
+
+                    'new_status' =>
+                        AssessmentSectionStatus::InProgress
+                            ->value,
+                ]
+            );
+        }
 
         return $this->resource(
             $assessment

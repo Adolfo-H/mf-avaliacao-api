@@ -10,6 +10,7 @@ use App\Http\Requests\Api\V1\UpdateAssessmentPosturalPhotoRequest;
 use App\Http\Requests\Api\V1\UploadAssessmentPosturalPhotoRequest;
 use App\Models\Assessment;
 use App\Models\AssessmentPosturalPhoto;
+use App\Support\AuditLogger;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -332,6 +333,17 @@ class AssessmentPosturalPhotoController extends Controller
                 'Arquivo da fotografia não encontrado.'
             );
         }
+
+        AuditLogger::record(
+            request(),
+            'assessment.postural_photo.view',
+            subject:
+                $photo,
+            assessmentId:
+                $assessment->id,
+            studentId:
+                $assessment->student_id
+        );
 
         return $disk->response(
             $photo->photo_path,

@@ -11,6 +11,7 @@ use App\Http\Requests\Api\V1\UpdateAssessmentRequest;
 use App\Http\Resources\Api\V1\AssessmentResource;
 use App\Models\Assessment;
 use App\Models\Student;
+use App\Support\AuditLogger;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -22,6 +23,16 @@ class AssessmentController extends Controller
     public function index(
         Request $request
     ): AnonymousResourceCollection {
+        $user =
+            $request->user();
+
+        if ($user->isReception()) {
+            abort(
+                403,
+                'Você não possui permissão para acessar avaliações.'
+            );
+        }
+
         $validated = $request->validate([
             'search' => [
                 'nullable',
@@ -73,6 +84,14 @@ class AssessmentController extends Controller
 
         $assessments =
             Assessment::query()
+                ->when(
+                    $user->isEvaluator(),
+                    fn ($query) =>
+                        $query->where(
+                            'evaluator_id',
+                            $user->id
+                        )
+                )
                 ->with([
                     'student',
                     'evaluator',
@@ -232,6 +251,29 @@ class AssessmentController extends Controller
                 }
             );
 
+        AuditLogger::record(
+            $request,
+            'assessment.create',
+            subject:
+                $assessment,
+            assessmentId:
+                $assessment->id,
+            studentId:
+                $assessment->student_id,
+            metadata: [
+                'evaluator_id' =>
+                    $assessment
+                        ->evaluator_id,
+
+                'evaluation_date' =>
+                    $assessment
+                        ->evaluation_date
+                        ->format(
+                            'Y-m-d'
+                        ),
+            ]
+        );
+
         return new AssessmentResource(
             $assessment->load([
                 'student',
@@ -245,6 +287,17 @@ class AssessmentController extends Controller
     public function show(
         Assessment $assessment
     ): AssessmentResource {
+        AuditLogger::record(
+            request(),
+            'assessment.view',
+            subject:
+                $assessment,
+            assessmentId:
+                $assessment->id,
+            studentId:
+                $assessment->student_id
+        );
+
         return new AssessmentResource(
             $assessment->load([
                 'student',
@@ -320,6 +373,25 @@ class AssessmentController extends Controller
             );
         }
 
+        $beforeUpdate = [
+            'student_id' =>
+                (int)
+                    $assessment
+                        ->student_id,
+
+            'evaluator_id' =>
+                (int)
+                    $assessment
+                        ->evaluator_id,
+
+            'evaluation_date' =>
+                $assessment
+                    ->evaluation_date
+                    ->format(
+                        'Y-m-d'
+                    ),
+        ];
+
         DB::transaction(
             function () use (
                 $data,
@@ -389,6 +461,78 @@ class AssessmentController extends Controller
                 );
             }
         );
+
+        $updatedAssessment =
+            $assessment->fresh();
+
+        $afterUpdate = [
+            'student_id' =>
+                (int)
+                    $updatedAssessment
+                        ->student_id,
+
+            'evaluator_id' =>
+                (int)
+                    $updatedAssessment
+                        ->evaluator_id,
+
+            'evaluation_date' =>
+                $updatedAssessment
+                    ->evaluation_date
+                    ->format(
+                        'Y-m-d'
+                    ),
+        ];
+
+        $oldValues = [];
+        $newValues = [];
+
+        foreach (
+            $beforeUpdate as
+                $field => $oldValue
+        ) {
+            $newValue =
+                $afterUpdate[
+                    $field
+                ];
+
+            if (
+                $oldValue
+                === $newValue
+            ) {
+                continue;
+            }
+
+            $oldValues[
+                $field
+            ] = $oldValue;
+
+            $newValues[
+                $field
+            ] = $newValue;
+        }
+
+        if ($oldValues !== []) {
+            AuditLogger::record(
+                $request,
+                'assessment.update',
+                subject:
+                    $updatedAssessment,
+                assessmentId:
+                    $updatedAssessment
+                        ->id,
+                studentId:
+                    $updatedAssessment
+                        ->student_id,
+                metadata: [
+                    'old_values' =>
+                        $oldValues,
+
+                    'new_values' =>
+                        $newValues,
+                ]
+            );
+        }
 
         return new AssessmentResource(
             $assessment
@@ -552,6 +696,26 @@ class AssessmentController extends Controller
                             ->id,
                 ]);
             }
+        );
+
+        $assessment->refresh();
+
+        AuditLogger::record(
+            $request,
+            'assessment.complete',
+            subject:
+                $assessment,
+            assessmentId:
+                $assessment->id,
+            studentId:
+                $assessment
+                    ->student_id,
+            metadata: [
+                'completed_at' =>
+                    $assessment
+                        ->completed_at
+                        ?->toISOString(),
+            ]
         );
 
         return new AssessmentResource(

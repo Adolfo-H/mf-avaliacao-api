@@ -112,15 +112,10 @@ class AssessmentAnamnesisController extends Controller
                     $parqAnswers !== null
                 ) {
                     $approvedQuestions =
-                        ParqQuestionVersion::query()
-                            ->where(
-                                'active',
-                                true
+                        $this
+                            ->parqQuestionsForAssessment(
+                                $assessment
                             )
-                            ->whereNotNull(
-                                'approved_at'
-                            )
-                            ->get()
                             ->keyBy('id');
 
                     /*
@@ -225,22 +220,119 @@ class AssessmentAnamnesisController extends Controller
         ]);
     }
 
-    private function buildResponse(
+    private function parqQuestionsForAssessment(
         Assessment $assessment
-    ): array {
-        $questions =
-            ParqQuestionVersion::query()
-                ->where(
-                    'active',
-                    true
+    ) {
+        $questionIds =
+            $assessment
+                ->parqAnswers()
+                ->pluck(
+                    'question_version_id'
                 )
-                ->whereNotNull(
-                    'approved_at'
+                ->map(
+                    fn ($id): int =>
+                        (int) $id
+                )
+                ->values();
+
+        /*
+         * Avaliação ainda sem respostas:
+         * usa a versão ativa atualmente
+         * aprovada.
+         */
+        if ($questionIds->isEmpty()) {
+            return
+                ParqQuestionVersion::query()
+                    ->where(
+                        'active',
+                        true
+                    )
+                    ->whereNotNull(
+                        'approved_at'
+                    )
+                    ->orderBy(
+                        'position'
+                    )
+                    ->get();
+        }
+
+        /*
+         * Descobre quais versões estão
+         * efetivamente ligadas às respostas
+         * desta avaliação.
+         */
+        $answeredQuestions =
+            ParqQuestionVersion::query()
+                ->whereIn(
+                    'id',
+                    $questionIds
                 )
                 ->orderBy(
                     'position'
                 )
                 ->get();
+
+        $versions =
+            $answeredQuestions
+                ->pluck(
+                    'version'
+                )
+                ->unique()
+                ->values();
+
+        /*
+         * No modelo atual, as sete perguntas
+         * de uma edição oficial compartilham
+         * a mesma versão.
+         *
+         * Se conseguirmos identificar uma
+         * única versão histórica completa,
+         * devolvemos as sete perguntas dela.
+         *
+         * Isso também permite continuar uma
+         * avaliação antiga parcialmente
+         * respondida.
+         */
+        if ($versions->count() === 1) {
+            $historicalQuestions =
+                ParqQuestionVersion::query()
+                    ->where(
+                        'version',
+                        $versions->first()
+                    )
+                    ->whereNotNull(
+                        'approved_at'
+                    )
+                    ->orderBy(
+                        'position'
+                    )
+                    ->get();
+
+            if (
+                $historicalQuestions
+                    ->count() === 7
+            ) {
+                return
+                    $historicalQuestions;
+            }
+        }
+
+        /*
+         * Fallback conservador:
+         * nunca troca respostas históricas
+         * pelas perguntas ativas atuais.
+         */
+        return $answeredQuestions;
+    }
+
+    private function buildResponse(
+        Assessment $assessment
+    ): array {
+        $questions =
+            $this
+                ->parqQuestionsForAssessment(
+                    $assessment
+                );
 
         $answers =
             $assessment

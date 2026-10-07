@@ -10,6 +10,7 @@ use App\Http\Requests\Api\V1\UpdateAssessmentProgressPhotoRequest;
 use App\Http\Requests\Api\V1\UploadAssessmentProgressPhotoRequest;
 use App\Models\Assessment;
 use App\Models\AssessmentProgressPhoto;
+use App\Support\AuditLogger;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -340,6 +341,17 @@ class AssessmentProgressPhotoController extends Controller
                 'Arquivo da fotografia não encontrado.'
             );
         }
+
+        AuditLogger::record(
+            request(),
+            'assessment.progress_photo.view',
+            subject:
+                $photo,
+            assessmentId:
+                $assessment->id,
+            studentId:
+                $assessment->student_id
+        );
 
         return $disk->response(
             $photo->photo_path,
