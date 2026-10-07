@@ -9,7 +9,39 @@ class StoreAssessmentRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        $user =
+            $this->user();
+
+        if (! $user) {
+            return false;
+        }
+
+        if ($user->isAdmin()) {
+            return true;
+        }
+
+        if (! $user->isEvaluator()) {
+            return false;
+        }
+
+        /*
+         * Se evaluator_id não foi informado,
+         * deixa a validação "required" cuidar
+         * da resposta 422.
+         */
+        if (
+            ! $this->has(
+                'evaluator_id'
+            )
+        ) {
+            return true;
+        }
+
+        return
+            (int) $this->input(
+                'evaluator_id'
+            )
+            === $user->id;
     }
 
     public function rules(): array
@@ -18,16 +50,32 @@ class StoreAssessmentRequest extends FormRequest
             'student_uuid' => [
                 'required',
                 'uuid',
-                Rule::exists('students', 'uuid')
-                    ->whereNull('archived_at'),
+
+                Rule::exists(
+                    'students',
+                    'uuid'
+                )
+                    ->whereNull(
+                        'archived_at'
+                    ),
             ],
 
             'evaluator_id' => [
                 'required',
                 'integer',
-                Rule::exists('users', 'id')
-                    ->where('active', true)
-                    ->where('role', 'evaluator'),
+
+                Rule::exists(
+                    'users',
+                    'id'
+                )
+                    ->where(
+                        'active',
+                        true
+                    )
+                    ->where(
+                        'role',
+                        'evaluator'
+                    ),
             ],
 
             'evaluation_date' => [
@@ -41,21 +89,29 @@ class StoreAssessmentRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'student_uuid.required' => 'Selecione o aluno.',
+            'student_uuid.required' =>
+                'Selecione o aluno.',
 
-            'student_uuid.uuid' => 'O aluno informado é inválido.',
+            'student_uuid.uuid' =>
+                'O aluno informado é inválido.',
 
-            'student_uuid.exists' => 'O aluno informado não está disponível.',
+            'student_uuid.exists' =>
+                'O aluno informado não está disponível.',
 
-            'evaluator_id.required' => 'Selecione o avaliador.',
+            'evaluator_id.required' =>
+                'Selecione o avaliador.',
 
-            'evaluator_id.exists' => 'O avaliador informado não está disponível.',
+            'evaluator_id.exists' =>
+                'O avaliador informado não está disponível.',
 
-            'evaluation_date.required' => 'Informe a data da avaliação.',
+            'evaluation_date.required' =>
+                'Informe a data da avaliação.',
 
-            'evaluation_date.date_format' => 'A data da avaliação deve estar no formato AAAA-MM-DD.',
+            'evaluation_date.date_format' =>
+                'A data da avaliação deve estar no formato AAAA-MM-DD.',
 
-            'evaluation_date.before_or_equal' => 'A data da avaliação não pode ser futura.',
+            'evaluation_date.before_or_equal' =>
+                'A data da avaliação não pode ser futura.',
         ];
     }
 }

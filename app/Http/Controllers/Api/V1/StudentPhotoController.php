@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\UploadStudentPhotoRequest;
 use App\Http\Resources\Api\V1\StudentResource;
 use App\Models\Student;
+use App\Support\AuditLogger;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -147,6 +148,15 @@ class StudentPhotoController extends Controller
                 'Fotografia não encontrada.'
             );
         }
+
+        AuditLogger::record(
+            request(),
+            'student.photo.view',
+            subject:
+                $student,
+            studentId:
+                $student->id
+        );
 
         return $disk->response(
             $student->photo_path,

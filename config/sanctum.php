@@ -50,7 +50,20 @@ return [
     |
     */
 
-    'expiration' => null,
+    /*
+     * Prazo padrão provisório:
+     * 8 horas.
+     *
+     * A duração definitiva deve ser
+     * validada pela MF. Pode ser
+     * alterada por ambiente sem
+     * mudança de código.
+     */
+    'expiration' =>
+        (int) env(
+            'SANCTUM_EXPIRATION_MINUTES',
+            480
+        ),
 
     /*
     |--------------------------------------------------------------------------
