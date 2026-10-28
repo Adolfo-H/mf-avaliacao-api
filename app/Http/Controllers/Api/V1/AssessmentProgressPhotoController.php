@@ -307,6 +307,14 @@ class AssessmentProgressPhotoController extends Controller
             $position
         );
 
+        // O consentimento continua sendo obrigatório na LEITURA da foto.
+        // A autorização pode ter sido revogada depois do upload.
+        $assessment->loadMissing('photoConsent');
+
+        if (! $assessment->photoConsent?->isActive()) {
+            abort(403, 'Consentimento fotográfico inativo ou revogado.');
+        }
+
         $photo =
             $assessment
                 ->progressPhotos()
@@ -358,7 +366,7 @@ class AssessmentProgressPhotoController extends Controller
             null,
             [
                 'Cache-Control' =>
-                    'private, max-age=300',
+                    'private, no-store',
 
                 'X-Content-Type-Options' =>
                     'nosniff',

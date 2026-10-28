@@ -14,9 +14,13 @@ use App\Http\Controllers\Api\V1\AssessmentVo2MaxController;
 use App\Http\Controllers\Api\V1\AssessmentEvaluatorController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\EvaluatorController;
+use App\Http\Controllers\Api\V1\DashboardSummaryController;
 use App\Http\Controllers\Api\V1\StudentController;
 use App\Http\Controllers\Api\V1\StudentAssessmentHistoryController;
+use App\Http\Controllers\Api\V1\StudentAssessmentEvolutionController;
 use App\Http\Controllers\Api\V1\StudentAssessmentComparisonController;
+use App\Http\Controllers\Api\V1\AssessmentReportPdfController;
+use App\Http\Controllers\Api\V1\StudentAssessmentPhotoComparisonController;
 use App\Http\Controllers\Api\V1\StudentPhotoController;
 use Illuminate\Support\Facades\Route;
 
@@ -91,6 +95,12 @@ Route::prefix('v1')->group(function (): void {
                 |--------------------------------------------------------------------------
                 */
 
+                // Indicadores reais; a Recepção recebe somente contagem administrativa.
+                Route::get(
+                    '/dashboard/summary',
+                    [DashboardSummaryController::class, 'index']
+                );
+
                 Route::patch(
                     '/students/{student}/status',
                     [
@@ -115,6 +125,24 @@ Route::prefix('v1')->group(function (): void {
                         StudentAssessmentComparisonController::class,
                         'show',
                     ]
+                );
+
+                // Evolução longitudinal de avaliações concluídas, sob autorização clínica.
+                Route::get(
+                    '/students/{student}/assessment-evolution',
+                    [StudentAssessmentEvolutionController::class, 'index']
+                );
+
+                // Fotos históricas: somente duas avaliações concluídas e autorizadas.
+                Route::get(
+                    '/students/{student}/assessment-photo-comparison',
+                    [StudentAssessmentPhotoComparisonController::class, 'show']
+                );
+
+                // Relatório privado; EnsureAssessmentAccess protege {assessment}.
+                Route::get(
+                    '/students/{student}/assessment-reports/{assessment}/pdf',
+                    [AssessmentReportPdfController::class, 'show']
                 );
 
                 Route::apiResource(

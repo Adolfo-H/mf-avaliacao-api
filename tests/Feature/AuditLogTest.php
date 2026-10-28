@@ -236,6 +236,16 @@ class AuditLogTest extends TestCase
                         $user->id,
                 ]);
 
+        // Registro obrigatório para leitura da foto (regra da Etapa 03).
+        $assessment->photoConsent()->create([
+            'purpose' => 'Acompanhamento privado de evolução física',
+            'consent_date' => today()->toDateString(),
+            'external_use_allowed' => false,
+            'storage_authorized' => true,
+            'registered_by' => $user->id,
+            'updated_by' => $user->id,
+        ]);
+
         $this
             ->get(
                 "/api/v1/assessments/{$assessment->uuid}/progress-photos/front"
