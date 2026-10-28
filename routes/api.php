@@ -15,6 +15,8 @@ use App\Http\Controllers\Api\V1\AssessmentEvaluatorController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\EvaluatorController;
 use App\Http\Controllers\Api\V1\StudentController;
+use App\Http\Controllers\Api\V1\StudentAssessmentHistoryController;
+use App\Http\Controllers\Api\V1\StudentAssessmentComparisonController;
 use App\Http\Controllers\Api\V1\StudentPhotoController;
 use Illuminate\Support\Facades\Route;
 
@@ -94,6 +96,24 @@ Route::prefix('v1')->group(function (): void {
                     [
                         StudentController::class,
                         'updateStatus',
+                    ]
+                );
+
+                // Historico clinico: o controller aplica escopo por avaliador.
+                Route::get(
+                    '/students/{student}/assessment-history',
+                    [
+                        StudentAssessmentHistoryController::class,
+                        'index',
+                    ]
+                );
+
+                // Comparação clínica entre duas avaliações concluídas e autorizadas.
+                Route::get(
+                    '/students/{student}/assessment-comparison',
+                    [
+                        StudentAssessmentComparisonController::class,
+                        'show',
                     ]
                 );
 

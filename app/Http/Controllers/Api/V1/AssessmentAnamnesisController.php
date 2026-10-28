@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Controllers\Api\V1\Concerns\EnsuresAssessmentSectionIsEditable;
 use App\Http\Requests\Api\V1\UpdateAssessmentAnamnesisRequest;
 use App\Models\Assessment;
+use App\Support\ClinicalAuditLogger;
 use App\Models\ParqQuestionVersion;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
@@ -78,6 +79,17 @@ class AssessmentAnamnesisController extends Controller
                 $data,
                 $parqAnswers
             ): void {
+                $beforeParq = $assessment
+                    ->parqAnswers()
+                    ->get()
+                    ->mapWithKeys(
+                        fn ($answer): array => [
+                            $answer->question_version_id =>
+                                (bool) $answer->answer,
+                        ]
+                    )
+                    ->all();
+
                 $currentPayload =
                     $assessment
                         ->anamnesis
@@ -202,6 +214,29 @@ class AssessmentAnamnesisController extends Controller
                         ->user()
                         ->id,
                 ]);
+                $afterParq = $assessment
+                    ->parqAnswers()
+                    ->get()
+                    ->mapWithKeys(
+                        fn ($answer): array => [
+                            $answer->question_version_id =>
+                                (bool) $answer->answer,
+                        ]
+                    )
+                    ->all();
+
+                ClinicalAuditLogger::record(
+                    $request,
+                    $assessment,
+                    'anamnesis',
+                    array_replace($currentPayload, [
+                        'parq_answers' => $beforeParq,
+                    ]),
+                    array_replace($payload, [
+                        'parq_answers' => $afterParq,
+                    ]),
+                );
+
             }
         );
 

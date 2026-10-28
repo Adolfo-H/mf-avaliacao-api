@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Controllers\Api\V1\Concerns\EnsuresAssessmentSectionIsEditable;
 use App\Http\Requests\Api\V1\UpdateAssessmentAnthropometryRequest;
 use App\Models\Assessment;
+use App\Support\ClinicalAuditLogger;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 
@@ -114,6 +115,14 @@ class AssessmentAnthropometryController extends Controller
                             ->user()
                             ->id,
                 ]);
+                ClinicalAuditLogger::record(
+                    $request,
+                    $assessment,
+                    'circumferences',
+                    $currentPayload,
+                    $payload,
+                );
+
             }
         );
 
