@@ -1,0 +1,76 @@
+name: MF API - testes e auditoria
+
+on:
+  push:
+    branches: [main, 'feature/**']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mf-api-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: ci-root-only
+          MYSQL_DATABASE: testing
+          MYSQL_USER: mf_ci
+          MYSQL_PASSWORD: mf_ci_only
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=12
+    env:
+      APP_ENV: testing
+      APP_DEBUG: 'false'
+      DB_CONNECTION: mysql
+      DB_HOST: 127.0.0.1
+      DB_PORT: '3306'
+      DB_DATABASE: testing
+      DB_USERNAME: mf_ci
+      DB_PASSWORD: mf_ci_only
+      DB_URL: ''
+      CACHE_STORE: array
+      SESSION_DRIVER: array
+      QUEUE_CONNECTION: sync
+      MAIL_MAILER: array
+      BCRYPT_ROUNDS: '4'
+      SANCTUM_EXPIRATION_MINUTES: '480'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: PHP 8.5 (igual ao Sail)
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          extensions: mbstring, intl, pdo_mysql, gd, zip, fileinfo, dom, xml
+          tools: composer:v2
+          coverage: none
+
+      - name: Instalar Composer pelo lockfile
+        run: composer install --no-interaction --prefer-dist --no-progress --optimize-autoloader
+
+      - name: Preparar chave efemera apenas para testes
+        run: |
+          cp .env.example .env
+          php artisan key:generate --force --no-interaction
+          php artisan config:clear
+
+      - name: Auditoria Composer sem ignorar alertas
+        run: composer audit --locked --no-interaction
+
+      - name: Todos os testes PHPUnit (MySQL descartavel)
+        run: php artisan test --no-ansi
