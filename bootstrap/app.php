@@ -15,6 +15,12 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // API sem sessão web: 401 sem tentar route('login'), mesmo
+        // quando o cliente solicita Accept: application/pdf ou */*.
+        $middleware->redirectGuestsTo(
+            fn (Request $request): ?string => $request->is('api/*') ? null : '/login'
+        );
+
         $middleware->appendToGroup(
             'api',
             [
