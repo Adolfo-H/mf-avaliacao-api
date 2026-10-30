@@ -3,6 +3,10 @@
 use App\Http\Controllers\Api\V1\AssessmentAnamnesisController;
 use App\Http\Controllers\Api\V1\AssessmentAnthropometryController;
 use App\Http\Controllers\Api\V1\AssessmentBodyCompositionController;
+use App\Http\Controllers\Api\V1\AssessmentWeltmanPreviewController;
+use App\Http\Controllers\Api\V1\AssessmentBioimpedancePreviewController;
+use App\Http\Controllers\Api\V1\AssessmentGuedesPreviewController;
+use App\Http\Controllers\Api\V1\AssessmentClinicalPreviewController;
 use App\Http\Controllers\Api\V1\AssessmentController;
 use App\Http\Controllers\Api\V1\AssessmentSectionController;
 use App\Http\Controllers\Api\V1\AssessmentPosturalPhotoController;
@@ -11,6 +15,8 @@ use App\Http\Controllers\Api\V1\AssessmentProgressPhotoController;
 use App\Http\Controllers\Api\V1\AssessmentPhotoConsentController;
 use App\Http\Controllers\Api\V1\AssessmentNeuromotorTestController;
 use App\Http\Controllers\Api\V1\AssessmentVo2MaxController;
+use App\Http\Controllers\Api\V1\AssessmentRockportPreviewController;
+use App\Http\Controllers\Api\V1\AssessmentCooperPreviewController;
 use App\Http\Controllers\Api\V1\AssessmentEvaluatorController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\EvaluatorController;
@@ -275,6 +281,42 @@ Route::prefix('v1')->group(function (): void {
                     ]
                 );
 
+                // Prévia matemática Weltman, não homologada, sem persistir resultados.
+                Route::get(
+                    '/assessments/{assessment}/body-composition/weltman-preview',
+                    [
+                        AssessmentWeltmanPreviewController::class,
+                        'show',
+                    ]
+                );
+
+                // Valores de bioimpedância transcritos, sem homologação clínica.
+                Route::get(
+                    '/assessments/{assessment}/body-composition/bioimpedance-preview',
+                    [
+                        AssessmentBioimpedancePreviewController::class,
+                        'show',
+                    ]
+                );
+
+                // Prévia Guedes apenas para pesquisa: não persiste resultado clínico.
+                Route::get(
+                    '/assessments/{assessment}/body-composition/guedes-preview',
+                    [
+                        AssessmentGuedesPreviewController::class,
+                        'show',
+                    ]
+                );
+
+                // Apenas prévia de pesquisa; não grava resultados nem homologa fórmulas.
+                Route::get(
+                    '/assessments/{assessment}/body-composition/clinical-preview',
+                    [
+                        AssessmentClinicalPreviewController::class,
+                        'show',
+                    ]
+                );
+
                 Route::put(
                     '/assessments/{assessment}/body-composition',
                     [
@@ -315,6 +357,24 @@ Route::prefix('v1')->group(function (): void {
                     '/assessments/{assessment}/vo2-max',
                     [
                         AssessmentVo2MaxController::class,
+                        'show',
+                    ]
+                );
+
+                // Prévia matemática Rockport, sob autenticação e sem persistir.
+                Route::get(
+                    '/assessments/{assessment}/vo2-max/rockport-preview',
+                    [
+                        AssessmentRockportPreviewController::class,
+                        'show',
+                    ]
+                );
+
+                // Consulta de cálculo indireto para conferência; não altera dados clínicos.
+                Route::get(
+                    '/assessments/{assessment}/vo2-max/cooper-preview',
+                    [
+                        AssessmentCooperPreviewController::class,
                         'show',
                     ]
                 );

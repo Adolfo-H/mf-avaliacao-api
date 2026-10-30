@@ -1,0 +1,112 @@
+{
+  "schema_version": 1,
+  "scope": "conferencia de instalacao e testes, sem homologacao clinica",
+  "modules": [
+    {
+      "id": "08A",
+      "name": "Jackson-Pollock 3 e 7 dobras",
+      "api_files": [
+        "app/Http/Controllers/Api/V1/AssessmentClinicalPreviewController.php",
+        "app/Support/ClinicalSkinfoldPreviewCalculator.php",
+        "tests/Feature/AssessmentClinicalPreviewTest.php",
+        "tests/Unit/ClinicalSkinfoldPreviewCalculatorTest.php"
+      ],
+      "mobile_files": [
+        "app/(app)/assessments/[uuid]/clinical-preview.tsx",
+        "services/clinical-preview.ts",
+        "types/clinical-preview.ts"
+      ],
+      "api_route": "/assessments/{assessment}/body-composition/clinical-preview",
+      "mobile_route": "/(app)/assessments/[uuid]/clinical-preview",
+      "mobile_entry_screen": "app/(app)/assessments/[uuid]/body-composition.tsx"
+    },
+    {
+      "id": "08B",
+      "name": "Cooper 12 minutos",
+      "api_files": [
+        "app/Http/Controllers/Api/V1/AssessmentCooperPreviewController.php",
+        "app/Support/Cooper12MinutePreviewCalculator.php",
+        "tests/Feature/AssessmentCooperPreviewTest.php",
+        "tests/Unit/Cooper12MinutePreviewCalculatorTest.php"
+      ],
+      "mobile_files": [
+        "app/(app)/assessments/[uuid]/vo2-cooper-preview.tsx",
+        "services/vo2-cooper-preview.ts",
+        "types/vo2-cooper-preview.ts"
+      ],
+      "api_route": "/assessments/{assessment}/vo2-max/cooper-preview",
+      "mobile_route": "/(app)/assessments/[uuid]/vo2-cooper-preview",
+      "mobile_entry_screen": "app/(app)/assessments/[uuid]/vo2-max.tsx"
+    },
+    {
+      "id": "08C",
+      "name": "Rockport 1 milha",
+      "api_files": [
+        "app/Http/Controllers/Api/V1/AssessmentRockportPreviewController.php",
+        "app/Support/RockportOneMilePreviewCalculator.php",
+        "tests/Feature/AssessmentRockportPreviewTest.php",
+        "tests/Unit/RockportOneMilePreviewCalculatorTest.php"
+      ],
+      "mobile_files": [
+        "app/(app)/assessments/[uuid]/vo2-rockport-preview.tsx",
+        "services/vo2-rockport-preview.ts",
+        "types/vo2-rockport-preview.ts"
+      ],
+      "api_route": "/assessments/{assessment}/vo2-max/rockport-preview",
+      "mobile_route": "/(app)/assessments/[uuid]/vo2-rockport-preview",
+      "mobile_entry_screen": "app/(app)/assessments/[uuid]/vo2-max.tsx"
+    },
+    {
+      "id": "08D",
+      "name": "Guedes 3 dobras",
+      "api_files": [
+        "app/Http/Controllers/Api/V1/AssessmentGuedesPreviewController.php",
+        "app/Support/GuedesThreeSkinfoldPreviewCalculator.php",
+        "tests/Feature/AssessmentGuedesPreviewTest.php",
+        "tests/Unit/GuedesThreeSkinfoldPreviewCalculatorTest.php"
+      ],
+      "mobile_files": [
+        "app/(app)/assessments/[uuid]/guedes-preview.tsx",
+        "services/guedes-preview.ts",
+        "types/guedes-preview.ts"
+      ],
+      "api_route": "/assessments/{assessment}/body-composition/guedes-preview",
+      "mobile_route": "/(app)/assessments/[uuid]/guedes-preview",
+      "mobile_entry_screen": "app/(app)/assessments/[uuid]/body-composition.tsx"
+    },
+    {
+      "id": "08E",
+      "name": "Bioimpedancia - dados do equipamento",
+      "api_files": [
+        "app/Http/Controllers/Api/V1/AssessmentBioimpedancePreviewController.php",
+        "tests/Feature/AssessmentBioimpedancePreviewTest.php"
+      ],
+      "mobile_files": [
+        "app/(app)/assessments/[uuid]/bioimpedance.tsx",
+        "services/bioimpedance.ts",
+        "types/bioimpedance.ts"
+      ],
+      "api_route": "/assessments/{assessment}/body-composition/bioimpedance-preview",
+      "mobile_route": "/(app)/assessments/[uuid]/bioimpedance",
+      "mobile_entry_screen": "app/(app)/assessments/[uuid]/body-composition.tsx"
+    },
+    {
+      "id": "08F",
+      "name": "Weltman - medidas abdominais",
+      "api_files": [
+        "app/Http/Controllers/Api/V1/AssessmentWeltmanPreviewController.php",
+        "app/Support/WeltmanObesityPreviewCalculator.php",
+        "tests/Feature/AssessmentWeltmanPreviewTest.php",
+        "tests/Unit/WeltmanObesityPreviewCalculatorTest.php"
+      ],
+      "mobile_files": [
+        "app/(app)/assessments/[uuid]/weltman-preview.tsx",
+        "services/weltman-preview.ts",
+        "types/weltman-preview.ts"
+      ],
+      "api_route": "/assessments/{assessment}/body-composition/weltman-preview",
+      "mobile_route": "/(app)/assessments/[uuid]/weltman-preview",
+      "mobile_entry_screen": "app/(app)/assessments/[uuid]/body-composition.tsx"
+    }
+  ]
+}

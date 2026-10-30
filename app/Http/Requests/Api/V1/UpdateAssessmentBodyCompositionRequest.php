@@ -57,6 +57,35 @@ class UpdateAssessmentBodyCompositionRequest extends FormRequest
             ],
 
             /*
+             * Transcrição do equipamento de bioimpedância.
+             * NÃO são cálculos nem classificações clínicas homologados.
+             */
+            'bioimpedance' => ['sometimes', 'nullable', 'array:manufacturer,model,software_version,measured_on,reported_weight_kg,body_fat_percentage,fat_mass_kg,fat_free_mass_kg,skeletal_muscle_mass_kg,total_body_water_percentage,resistance_ohm,reactance_ohm,conditions,notes'],
+            'bioimpedance.manufacturer' => ['sometimes', 'nullable', 'string', 'max:120'],
+            'bioimpedance.model' => ['sometimes', 'nullable', 'string', 'max:120'],
+            'bioimpedance.software_version' => ['sometimes', 'nullable', 'string', 'max:120'],
+            'bioimpedance.measured_on' => ['sometimes', 'nullable', 'date_format:Y-m-d'],
+            'bioimpedance.reported_weight_kg' => ['sometimes', 'nullable', 'numeric', 'gt:0', 'max:500'],
+            'bioimpedance.body_fat_percentage' => ['sometimes', 'nullable', 'numeric', 'min:0', 'max:100'],
+            'bioimpedance.fat_mass_kg' => ['sometimes', 'nullable', 'numeric', 'min:0', 'max:500'],
+            'bioimpedance.fat_free_mass_kg' => ['sometimes', 'nullable', 'numeric', 'min:0', 'max:500'],
+            'bioimpedance.skeletal_muscle_mass_kg' => ['sometimes', 'nullable', 'numeric', 'min:0', 'max:500'],
+            'bioimpedance.total_body_water_percentage' => ['sometimes', 'nullable', 'numeric', 'min:0', 'max:100'],
+            'bioimpedance.resistance_ohm' => ['sometimes', 'nullable', 'numeric', 'gt:0', 'max:5000'],
+            'bioimpedance.reactance_ohm' => ['sometimes', 'nullable', 'numeric', 'min:0', 'max:5000'],
+            'bioimpedance.conditions' => ['sometimes', 'nullable', 'string', 'max:2000'],
+            'bioimpedance.notes' => ['sometimes', 'nullable', 'string', 'max:2000'],
+
+            /*
+             * Weltman: duas medidas abdominais independentes da cintura.
+             * Gravação no payload criptografado; resultados NÃO homologados.
+             */
+            'weltman' => ['sometimes', 'nullable', 'array:abdomen_upper_cm,abdomen_umbilicus_cm,applicability_confirmed'],
+            'weltman.abdomen_upper_cm' => ['sometimes', 'nullable', 'numeric', 'gt:0', 'max:300'],
+            'weltman.abdomen_umbilicus_cm' => ['sometimes', 'nullable', 'numeric', 'gt:0', 'max:300'],
+            'weltman.applicability_confirmed' => ['sometimes', 'boolean'],
+
+            /*
              * Dobras cutâneas em milímetros.
              */
             'skinfolds' => [

@@ -326,7 +326,7 @@ class AssessmentBodyCompositionController extends Controller
 
                     'label' => 'Pollock de 3 dobras',
 
-                    'fields_configured' => false,
+                    'fields_configured' => true,
 
                     'calculation_configured' => false,
                 ],
@@ -336,7 +336,7 @@ class AssessmentBodyCompositionController extends Controller
 
                     'label' => 'Guedes de 3 dobras',
 
-                    'fields_configured' => false,
+                    'fields_configured' => true,
 
                     'calculation_configured' => false,
                 ],
@@ -346,7 +346,7 @@ class AssessmentBodyCompositionController extends Controller
 
                     'label' => 'Bioimpedância',
 
-                    'fields_configured' => false,
+                    'fields_configured' => true,
 
                     'calculation_configured' => false,
                 ],
@@ -356,7 +356,7 @@ class AssessmentBodyCompositionController extends Controller
 
                     'label' => 'Weltman para obesos',
 
-                    'fields_configured' => false,
+                    'fields_configured' => true,
 
                     'calculation_configured' => false,
                 ],
