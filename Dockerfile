@@ -13,7 +13,7 @@ RUN apt-get update \
       ca-certificates unzip git libicu-dev libzip-dev libonig-dev \
       libpng-dev libjpeg62-turbo-dev libfreetype6-dev \
  && docker-php-ext-configure gd --with-jpeg --with-freetype \
- && docker-php-ext-install -j2 pdo_mysql mbstring intl zip gd bcmath exif opcache \
+ && docker-php-ext-install -j2 pdo_mysql mbstring intl zip gd bcmath exif \
  && a2enmod rewrite headers \
  && sed -ri 's/^Listen 80$/Listen 10000/' /etc/apache2/ports.conf \
  && printf 'StartServers 1\nMinSpareServers 1\nMaxSpareServers 2\nMaxRequestWorkers 3\nMaxConnectionsPerChild 200\n' > /etc/apache2/conf-available/mf-small.conf \
