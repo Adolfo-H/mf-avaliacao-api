@@ -350,7 +350,7 @@ class AssessmentPosturalPhotoController extends Controller
             null,
             [
                 'Cache-Control' =>
-                    'private, max-age=300',
+                    'private, no-store',
 
                 'X-Content-Type-Options' =>
                     'nosniff',

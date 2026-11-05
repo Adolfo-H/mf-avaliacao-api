@@ -60,6 +60,21 @@ return [
             'report' => false,
         ],
 
+        // Etapa 13: fotos privadas duráveis (Backblaze B2 / qualquer S3 compatível).
+        // Bucket obrigatoriamente PRIVADO; não publicar URLs diretas.
+        'student_photos_s3' => [
+            'driver' => 's3',
+            'key' => env('MF_B2_KEY_ID'),
+            'secret' => env('MF_B2_APP_KEY'),
+            'region' => env('MF_B2_REGION'),
+            'bucket' => env('MF_B2_BUCKET'),
+            'endpoint' => env('MF_B2_ENDPOINT'),
+            'use_path_style_endpoint' => true,
+            'visibility' => 'private',
+            'throw' => true,
+            'report' => true,
+        ],
+
         'student_photos_local' => [
             'driver' => 'local',
             'root' => storage_path(
