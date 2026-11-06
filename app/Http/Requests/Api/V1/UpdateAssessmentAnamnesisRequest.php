@@ -175,6 +175,13 @@ class UpdateAssessmentAnamnesisRequest extends FormRequest
             /*
              * PAR-Q
              */
+            // Referência administrativa ao PDF oficial PAR-Q+ preenchido fora do app.
+            // array:<chaves> rejeita atributos extras, especialmente aprovação clínica.
+            'parq_external' => ['sometimes', 'required', 'array:version,completed_on,document_reference', 'required_array_keys:version,completed_on,document_reference'],
+            'parq_external.version' => ['required_with:parq_external', 'string', 'regex:/^20[0-9]{2}$/'],
+            'parq_external.completed_on' => ['required_with:parq_external', 'date_format:Y-m-d', 'before_or_equal:today'],
+            'parq_external.document_reference' => ['required_with:parq_external', 'string', 'regex:/^[A-Za-z0-9._-]{3,80}$/'],
+
             'parq_answers' => [
                 'sometimes',
                 'array',

@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Controllers\Api\V1\Concerns\EnsuresAssessmentSectionIsEditable;
 use App\Http\Requests\Api\V1\UpdateAssessmentNeuromotorTestRequest;
 use App\Models\Assessment;
+use App\Support\NeuromotorReferenceReadiness;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 
@@ -241,6 +242,8 @@ class AssessmentNeuromotorTestController extends Controller
 
             'results' =>
                 $results,
+
+            'reference_review' => (new NeuromotorReferenceReadiness())->evaluate($payload),
 
             'previous' =>
                 $previous
