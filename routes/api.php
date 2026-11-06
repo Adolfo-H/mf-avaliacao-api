@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\V1\AssessmentProgressPhotoController;
 use App\Http\Controllers\Api\V1\AssessmentPhotoConsentController;
 use App\Http\Controllers\Api\V1\AssessmentNeuromotorTestController;
 use App\Http\Controllers\Api\V1\AssessmentVo2MaxController;
+use App\Http\Controllers\Api\V1\AssessmentRun2400PreviewController;
 use App\Http\Controllers\Api\V1\AssessmentRockportPreviewController;
 use App\Http\Controllers\Api\V1\AssessmentCooperPreviewController;
 use App\Http\Controllers\Api\V1\AssessmentEvaluatorController;
@@ -357,6 +358,15 @@ Route::prefix('v1')->group(function (): void {
                     '/assessments/{assessment}/vo2-max',
                     [
                         AssessmentVo2MaxController::class,
+                        'show',
+                    ]
+                );
+
+                // Corrida 2,4 km: prévia matemática de leitura, sem persistência.
+                Route::get(
+                    '/assessments/{assessment}/vo2-max/2400m-preview',
+                    [
+                        AssessmentRun2400PreviewController::class,
                         'show',
                     ]
                 );

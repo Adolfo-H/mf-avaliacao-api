@@ -46,6 +46,9 @@ class AssessmentAnamnesisController extends Controller
         $data =
             $request->validated();
 
+        $externalParq = $data['parq_external'] ?? null;
+        unset($data['parq_external']);
+
         $parqAnswers =
             $data['parq_answers']
             ?? null;
@@ -77,7 +80,8 @@ class AssessmentAnamnesisController extends Controller
                 $assessment,
                 $request,
                 $data,
-                $parqAnswers
+                $parqAnswers,
+                $externalParq
             ): void {
                 $beforeParq = $assessment
                     ->parqAnswers()
@@ -106,6 +110,18 @@ class AssessmentAnamnesisController extends Controller
                         $currentPayload,
                         $data
                     );
+
+                if ($externalParq !== null) {
+                    // Registra só referência, nunca respostas ou atestado.
+                    $payload['parq_external'] = [
+                        'version' => $externalParq['version'],
+                        'completed_on' => $externalParq['completed_on'],
+                        'document_reference' => $externalParq['document_reference'],
+                        'source_url' => 'https://eparmedx.com/how-to-cite/',
+                        'recorded_at' => now()->toIso8601String(),
+                        'recorded_by' => $request->user()->id,
+                    ];
+                }
 
                 $assessment
                     ->anamnesis()
@@ -406,6 +422,10 @@ class AssessmentAnamnesisController extends Controller
                  * aprovadas.
                  */
                 'configured' => $questions->count() === 7,
+
+                // Registro externo NÃO habilita perguntas nem libera aptidão.
+                'external_form_registered' => ! empty(($assessment->anamnesis?->payload ?? [])['parq_external']['document_reference']),
+                'external_form_status' => 'document_reference_only_no_clearance',
 
                 'questions' => $questions->map(
                     function (
