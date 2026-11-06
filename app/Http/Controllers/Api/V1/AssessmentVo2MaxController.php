@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Controllers\Api\V1\Concerns\EnsuresAssessmentSectionIsEditable;
 use App\Http\Requests\Api\V1\UpdateAssessmentVo2MaxRequest;
 use App\Models\Assessment;
+use App\Support\PredictedMaxHeartRatePreviewCalculator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 
@@ -270,6 +271,11 @@ class AssessmentVo2MaxController extends Controller
                         'test'
                     ] ?? [],
             ],
+
+            // Consulta informativa; nao altera results/calculation_status.
+            'max_heart_rate_preview' => (new PredictedMaxHeartRatePreviewCalculator())->evaluate(
+                $assessment->ageAtEvaluation()
+            ),
 
             'results' =>
                 $results,

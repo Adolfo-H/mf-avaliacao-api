@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Controllers\Api\V1\Concerns\EnsuresAssessmentSectionIsEditable;
 use App\Http\Requests\Api\V1\UpdateAssessmentBodyCompositionRequest;
 use App\Models\Assessment;
+use App\Support\AdultBmiReferencePreviewCalculator;
 use App\Support\ClinicalAuditLogger;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
@@ -273,6 +274,13 @@ class AssessmentBodyCompositionController extends Controller
             'assessment_uuid' => $assessment->uuid,
 
             'body_composition' => $payload,
+
+            // Previa informativa apenas na resposta; nao altera laudo oficial.
+            'bmi_reference_preview' => (new AdultBmiReferencePreviewCalculator())->evaluate(
+                $assessment->ageAtEvaluation(),
+                $payload['weight_kg'] ?? null,
+                $payload['height_m'] ?? null
+            ),
 
             'results' => $results,
 
