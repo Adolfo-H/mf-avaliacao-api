@@ -49,6 +49,17 @@ final class MfBillingController extends Controller {
     }
     public function reverse(Request $r, MfBillingInvoice $invoice): JsonResponse { return $this->reasonAction($r,$invoice,'reverse'); }
     public function cancel(Request $r, MfBillingInvoice $invoice): JsonResponse { return $this->reasonAction($r,$invoice,'cancel'); }
+    public function restore(Request $r, MfBillingInvoice $invoice): JsonResponse {
+        $d = $r->validate([
+            'revision' => 'required|integer|min:1',
+            'amount_cents' => 'required|integer|min:1|max:100000000',
+            'due_date' => 'required|date_format:Y-m-d|after_or_equal:2000-01-01',
+            'reason' => 'required|string|min:5|max:500',
+        ]);
+        return response()->json([
+            'data' => $this->billing->invoiceData($this->billing->changeInvoice($invoice, $d, $r->user(), 'restore')),
+        ]);
+    }
     private function reasonAction(Request $r, MfBillingInvoice $invoice, string $type): JsonResponse {
         $d=$r->validate(['revision'=>'required|integer|min:1','reason'=>'required|string|min:5|max:500']);
         return response()->json(['data'=>$this->billing->invoiceData($this->billing->changeInvoice($invoice,$d,$r->user(),$type))]);

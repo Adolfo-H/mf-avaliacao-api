@@ -4,6 +4,7 @@ namespace App\Services;
 use App\Models\{MfBillingAccount, MfBillingInvoice, MfBillingEvent, Student, User};
 use App\Support\MfBillingRules;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\ValidationException;
 final class MfBillingService {
     public function event(MfBillingAccount $a, ?MfBillingInvoice $i, ?User $u, string $action, array $details=[]): void {
@@ -87,6 +88,20 @@ final class MfBillingService {
                 abort_unless($user->isAdmin(),403);
                 abort_if($i->paid_on || $i->cancelled_at,409,'Não é possível cancelar esta mensalidade.');
                 $i->cancelled_at=now(); $i->cancellation_reason=$d['reason'];
+            } elseif ($operation==='restore') {
+                // Reativar a MESMA fatura: unicidade aluno+competencia permanece protegida.
+                abort_unless($user->isAdmin(), 403, 'Somente administradores podem reativar mensalidades.');
+                abort_unless($i->cancelled_at && !$i->paid_on, 409, 'Somente mensalidades canceladas podem ser reativadas.');
+                abort_unless(substr($d['due_date'], 0, 7) === $i->reference_month, 422, 'O vencimento precisa estar no mês da mensalidade.');
+                // Sem repeticao de aviso ja preparado/enviado sob a cobranca antiga.
+                $hasReminder = $i->reminders()->whereNotIn('status', ['failed', 'not_sent'])->exists();
+                $hasAutoJob = Schema::hasTable('mf_billing_auto_outbox')
+                    && DB::table('mf_billing_auto_outbox')->where('invoice_id', $i->id)->exists();
+                abort_if($hasReminder || $hasAutoJob, 409, 'Esta mensalidade possui mensagens anteriores. Confira o histórico antes de reativar.');
+                $i->cancelled_at = null;
+                $i->cancellation_reason = null;
+                $i->amount_cents = $d['amount_cents'];
+                $i->due_date = $d['due_date'];
             } else {
                 abort_if($i->paid_on || $i->cancelled_at,409,'Somente mensalidades em aberto podem ser ajustadas.');
                 $i->amount_cents=$d['amount_cents']; $i->due_date=$d['due_date'];

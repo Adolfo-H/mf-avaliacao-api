@@ -15,6 +15,7 @@ Route::prefix('v1/billing')->group(function (): void {
         Route::post('invoices/{invoice}/pay',[C::class,'pay']);
         Route::post('invoices/{invoice}/reverse',[C::class,'reverse']);
         Route::post('invoices/{invoice}/cancel',[C::class,'cancel']);
+        Route::post('invoices/{invoice}/restore',[C::class,'restore']);
         Route::patch('invoices/{invoice}/terms',[C::class,'terms']);
         Route::get('invoices/{invoice}/preview',[C::class,'preview']);
         Route::post('invoices/{invoice}/reminders',[C::class,'send'])->middleware('throttle:10,1');
