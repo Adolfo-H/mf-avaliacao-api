@@ -6,15 +6,17 @@ use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class AssessmentEvaluatorController extends Controller
 {
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
         $evaluators = User::query()
-            ->where(
-                'role',
-                UserRole::Evaluator->value
+            ->whereIn('role',
+                $request->user()?->isAdmin()
+                    ? [UserRole::Evaluator->value, UserRole::Admin->value]
+                    : [UserRole::Evaluator->value]
             )
             ->where('active', true)
             ->orderBy('name')

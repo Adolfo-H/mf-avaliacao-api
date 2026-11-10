@@ -72,10 +72,7 @@ class StoreAssessmentRequest extends FormRequest
                         'active',
                         true
                     )
-                    ->where(
-                        'role',
-                        'evaluator'
-                    ),
+                    ->whereIn('role', ['evaluator', 'admin']),
             ],
 
             'evaluation_date' => [
@@ -89,29 +86,21 @@ class StoreAssessmentRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'student_uuid.required' =>
-                'Selecione o aluno.',
+            'student_uuid.required' => 'Selecione o aluno.',
 
-            'student_uuid.uuid' =>
-                'O aluno informado é inválido.',
+            'student_uuid.uuid' => 'O aluno informado é inválido.',
 
-            'student_uuid.exists' =>
-                'O aluno informado não está disponível.',
+            'student_uuid.exists' => 'O aluno informado não está disponível.',
 
-            'evaluator_id.required' =>
-                'Selecione o avaliador.',
+            'evaluator_id.required' => 'Selecione o avaliador.',
 
-            'evaluator_id.exists' =>
-                'O avaliador informado não está disponível.',
+            'evaluator_id.exists' => 'O avaliador informado não está disponível.',
 
-            'evaluation_date.required' =>
-                'Informe a data da avaliação.',
+            'evaluation_date.required' => 'Informe a data da avaliação.',
 
-            'evaluation_date.date_format' =>
-                'A data da avaliação deve estar no formato AAAA-MM-DD.',
+            'evaluation_date.date_format' => 'A data da avaliação deve estar no formato AAAA-MM-DD.',
 
-            'evaluation_date.before_or_equal' =>
-                'A data da avaliação não pode ser futura.',
+            'evaluation_date.before_or_equal' => 'A data da avaliação não pode ser futura.',
         ];
     }
 }
