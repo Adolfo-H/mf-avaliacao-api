@@ -1,0 +1,36 @@
+name: MF Cloud WhatsApp Worker - validacoes
+
+on:
+  push:
+    paths:
+      - 'deploy/whatsapp-worker/**'
+      - '.github/workflows/ci-mf-whatsapp-worker.yml'
+  pull_request:
+    paths:
+      - 'deploy/whatsapp-worker/**'
+      - '.github/workflows/ci-mf-whatsapp-worker.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    defaults:
+      run:
+        working-directory: deploy/whatsapp-worker
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: deploy/whatsapp-worker/package-lock.json
+      - name: Instalar dependencias e aplicar patch com versao fixa
+        run: npm ci --omit=dev --no-audit --no-fund
+      - name: Confirmar patch e executa testes sem envio real
+        run: npm run prestart && npm run check
+      - name: Compilar imagem Docker com Chromium para validacao de deploy
+        run: docker build -t mf-whatsapp-worker-ci .

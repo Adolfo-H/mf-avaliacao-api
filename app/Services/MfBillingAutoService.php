@@ -283,11 +283,22 @@ final class MfBillingAutoService
     public function optOut(string $phone): int
     {
         $normalized = MfBillingRules::phone($phone);
-        $hash = hash_hmac('sha256', (string) $normalized, (string) config('app.key'));
+        // O WhatsApp pode devolver telefones brasileiros com ou sem o nono digito.
+        // Nunca altera o numero cadastrado; consulta apenas hashes equivalentes.
+        $phones = [$normalized];
+        if (str_starts_with($normalized, '55') && strlen($normalized) === 12) {
+            $phones[] = substr($normalized, 0, 4).'9'.substr($normalized, 4);
+        } elseif (str_starts_with($normalized, '55') && strlen($normalized) === 13 && $normalized[4] === '9') {
+            $phones[] = substr($normalized, 0, 4).substr($normalized, 5);
+        }
+        $hashes = array_map(
+            static fn (string $value): string => hash_hmac('sha256', $value, (string) config('app.key')),
+            array_unique($phones)
+        );
 
-        return DB::transaction(function () use ($hash) {
+        return DB::transaction(function () use ($hashes) {
             $count = 0;
-            foreach (MfBillingAccount::query()->where('phone_hash', $hash)->whereNotNull('consented_at')->lockForUpdate()->get() as $a) {
+            foreach (MfBillingAccount::query()->whereIn('phone_hash', $hashes)->whereNotNull('consented_at')->lockForUpdate()->get() as $a) {
                 $a->consented_at = null;
                 $a->consent_note = null;
                 $a->revision++;
