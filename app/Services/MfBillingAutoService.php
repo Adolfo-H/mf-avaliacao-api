@@ -20,7 +20,14 @@ final class MfBillingAutoService
 
     public function settings(): MfBillingAutoSetting
     {
-        return MfBillingAutoSetting::query()->firstOrCreate(['id' => 1], [
+        $existing = MfBillingAutoSetting::query()->find(1);
+        if ($existing !== null) {
+            return $existing;
+        }
+
+        // O ID 1 deve ser explicito: o modelo protege "id" contra mass assignment.
+        // Em MySQL, o AUTO_INCREMENT nao volta ao numero anterior apos rollback.
+        $setting = new MfBillingAutoSetting([
             'enabled' => false,
             'sender_phone' => null,
             'first_after_days' => 3,
@@ -31,6 +38,16 @@ final class MfBillingAutoService
             'revision' => 1,
             'worker_connected' => false,
         ]);
+        $setting->id = 1;
+
+        try {
+            $setting->save();
+        } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
+            // Outra requisicao pode ter inicializado a mesma configuracao.
+            return MfBillingAutoSetting::query()->findOrFail(1);
+        }
+
+        return $setting;
     }
 
     public function summary(MfBillingAutoSetting $s): array

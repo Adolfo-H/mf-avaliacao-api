@@ -70,6 +70,8 @@ final class MfBillingAutomationTest extends TestCase
     private function worker(): void { $this->withHeader('X-MF-Billing-Worker', str_repeat('X', 48)); }
     private function ready(): void
     {
+        // Regressao MySQL: o singleton permanece id=1 mesmo apos rollback.
+        $this->assertSame(1, (int) MfBillingAutoSetting::query()->sole()->getKey());
         $this->worker();
         $this->postJson('/api/v1/billing/local-worker/heartbeat', [
             'phone'=>'5545999991111', 'ready'=>true,
