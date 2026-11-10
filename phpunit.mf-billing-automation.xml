@@ -1,0 +1,8 @@
+<phpunit bootstrap="vendor/autoload.php" colors="true"><testsuites><testsuite name="MF Billing Automation"><file>tests/Unit/MfBillingAutoRulesTest.php</file><file>tests/Feature/MfBillingAutomationTest.php</file></testsuite></testsuites><php>
+<env name="APP_ENV" value="testing" force="true"/><env name="APP_KEY" value="base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=" force="true"/>
+<env name="DB_CONNECTION" value="sqlite" force="true"/><env name="DB_DATABASE" value=":memory:" force="true"/><env name="DB_URL" value="" force="true"/>
+<env name="CACHE_STORE" value="array" force="true"/><env name="SESSION_DRIVER" value="array" force="true"/><env name="QUEUE_CONNECTION" value="sync" force="true"/>
+<env name="MAIL_MAILER" value="array" force="true"/><env name="BCRYPT_ROUNDS" value="4" force="true"/>
+<env name="MF_BILLING_ENABLED" value="true" force="true"/><env name="MF_WHATSAPP_ENABLED" value="false" force="true"/>
+<env name="MF_BILLING_LOCAL_AUTOMATION_ENABLED" value="true" force="true"/><env name="MF_BILLING_LOCAL_WORKER_TOKEN" value="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" force="true"/>
+</php></phpunit>

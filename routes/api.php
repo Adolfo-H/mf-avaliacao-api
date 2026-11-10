@@ -568,3 +568,6 @@ Route::prefix('v1')->group(function (): void {
 
 // MF mensalidades: módulo administrativo separado das avaliações.
 require __DIR__.'/mf-billing.php';
+
+// Conector local opcional, desativado por padrão.
+require __DIR__.'/mf-billing-local.php';
