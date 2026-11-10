@@ -1,0 +1,12 @@
+.git
+.env
+.env.*
+node_modules
+.DS_Store
+*.log
+*.zip
+session*
+.wwebjs_auth
+.wwebjs_cache
+var
+storage
