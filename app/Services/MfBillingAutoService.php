@@ -4,8 +4,16 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Models\{MfBillingAccount, MfBillingAutoOutbox, MfBillingAutoSetting, MfBillingInvoice, MfBillingReminder, User};
-use App\Support\{MfBillingAutoRules, MfBillingRules};
+use App\Models\MfBillingAccount;
+use App\Models\MfBillingAutoOutbox;
+use App\Models\MfBillingAutoSetting;
+use App\Models\MfBillingInvoice;
+use App\Models\MfBillingReminder;
+use App\Models\User;
+use App\Support\MfBillingAutoRules;
+use App\Support\MfBillingRules;
+use App\Support\MfBillingSenderPhone;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -42,7 +50,7 @@ final class MfBillingAutoService
 
         try {
             $setting->save();
-        } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
+        } catch (UniqueConstraintViolationException $e) {
             // Outra requisicao pode ter inicializado a mesma configuracao.
             return MfBillingAutoSetting::query()->findOrFail(1);
         }
@@ -65,7 +73,7 @@ final class MfBillingAutoService
             'server_armed' => (bool) config('mf_billing_local.enabled'),
             'worker_online' => $s->worker_connected && $s->worker_seen_at?->gt(now()->subSeconds((int) config('mf_billing_local.max_worker_age_seconds', 150))),
             'worker_seen_at' => $s->worker_seen_at?->toIso8601String(),
-            'worker_matches_sender' => $s->sender_phone && $s->sender_phone === $s->worker_phone,
+            'worker_matches_sender' => MfBillingSenderPhone::matches($s->sender_phone, $s->worker_phone),
             'daily_cap' => (int) config('mf_billing_local.max_daily_reminders', 10),
             'note' => 'Envio local não oficial: depende de computador conectado e pode causar restrições à conta WhatsApp.',
         ];
@@ -75,12 +83,15 @@ final class MfBillingAutoService
     {
         $templates = MfBillingAutoRules::validateTemplates($data['templates'], (int) $data['max_reminders']);
         $phone = MfBillingRules::phone($data['sender_phone'] ?? null);
-        if ($data['enabled'] && !$phone) {
+        if ($data['enabled'] && ! $phone) {
             throw ValidationException::withMessages(['sender_phone' => 'Informe o número remetente com DDI.']);
         }
+
         return DB::transaction(function () use ($data, $templates, $phone, $user) {
             $s = MfBillingAutoSetting::query()->whereKey(1)->lockForUpdate()->first();
-            if (!$s) $s = $this->settings();
+            if (! $s) {
+                $s = $this->settings();
+            }
             abort_if($s->revision !== (int) $data['revision'], 409, 'Configuração alterada em outra sessão. Recarregue.');
             if ($phone !== $s->sender_phone) {
                 $s->worker_phone = null;
@@ -97,6 +108,7 @@ final class MfBillingAutoService
             $s->updated_by = $user->id;
             $s->revision++;
             $s->save();
+
             return $s;
         }, 3);
     }
@@ -110,9 +122,10 @@ final class MfBillingAutoService
         $s->worker_connected = $ready;
         $s->worker_seen_at = now();
         $s->save();
+
         return [
             'enabled' => $s->enabled && (bool) config('mf_billing_local.enabled'),
-            'matches_sender' => (bool) $phone && $s->sender_phone === $phone,
+            'matches_sender' => MfBillingSenderPhone::matches($s->sender_phone, $phone),
             'sender_phone' => $s->sender_phone,
             'poll_seconds' => 60,
         ];
@@ -123,36 +136,46 @@ final class MfBillingAutoService
     {
         return DB::transaction(function () use ($connectedPhone) {
             $s = MfBillingAutoSetting::query()->whereKey(1)->lockForUpdate()->first();
-            if (!$s || !$s->enabled || !$s->sender_phone || $s->sender_phone !== MfBillingRules::phone($connectedPhone)
-                || !$s->worker_connected || !$s->worker_seen_at?->gt(now()->subSeconds(150))) return null;
+            if (! $s || ! $s->enabled || ! $s->sender_phone || ! MfBillingSenderPhone::matches($s->sender_phone, MfBillingRules::phone($connectedPhone))
+                || ! $s->worker_connected || ! $s->worker_seen_at?->gt(now()->subSeconds(150))) {
+                return null;
+            }
 
             // Gera a competência corrente mesmo se Fernando não abrir o painel.
-            if (!$s->last_generated_at || $s->last_generated_at->lt(now()->subHour())) {
+            if (! $s->last_generated_at || $s->last_generated_at->lt(now()->subHour())) {
                 $this->billing->generate(now('America/Sao_Paulo')->format('Y-m'));
                 $s->last_generated_at = now();
                 $s->save();
             }
             $start = now('America/Sao_Paulo')->startOfDay()->utc();
-            if (MfBillingAutoOutbox::query()->where('claimed_at', '>=', $start)->count() >= (int) config('mf_billing_local.max_daily_reminders', 10)) return null;
+            if (MfBillingAutoOutbox::query()->where('claimed_at', '>=', $start)->count() >= (int) config('mf_billing_local.max_daily_reminders', 10)) {
+                return null;
+            }
             $now = now('America/Sao_Paulo')->timestamp;
             $maxLag = (int) config('mf_billing_local.max_dispatch_lag_hours', 48) * 3600;
             $candidates = MfBillingInvoice::query()
                 ->whereNull('paid_on')->whereNull('cancelled_at')
                 ->where('due_date', '<', now('America/Sao_Paulo')->format('Y-m-d'))
                 ->where('due_date', '>=', now('America/Sao_Paulo')->subDays(110)->format('Y-m-d'))
-                ->whereHas('account', fn($q) => $q->where('enabled', true)->whereNotNull('consented_at')
-                    ->whereHas('student', fn($s) => $s->where('active', true)->whereNull('archived_at')))
+                ->whereHas('account', fn ($q) => $q->where('enabled', true)->whereNotNull('consented_at')
+                    ->whereHas('student', fn ($s) => $s->where('active', true)->whereNull('archived_at')))
                 ->orderBy('due_date')->orderBy('id')->limit(150)->get();
             foreach ($candidates as $candidate) {
                 // Mesma ordem de locks do restante da API: conta -> cobrança.
                 $a = MfBillingAccount::query()->with('student')->whereKey($candidate->account_id)->lockForUpdate()->first();
                 $i = MfBillingInvoice::query()->whereKey($candidate->id)->lockForUpdate()->first();
-                if (!$a || !$i || $i->paid_on || $i->cancelled_at || !$a->enabled || !$a->consented_at || !$a->whatsapp_phone
-                    || !$a->student->active || $a->student->isArchived()) continue;
+                if (! $a || ! $i || $i->paid_on || $i->cancelled_at || ! $a->enabled || ! $a->consented_at || ! $a->whatsapp_phone
+                    || ! $a->student->active || $a->student->isArchived()) {
+                    continue;
+                }
                 $prior = MfBillingAutoOutbox::query()->where('invoice_id', $i->id)->orderBy('step')->get();
-                if ($prior->contains(fn($j) => $j->status !== 'sent')) continue;
+                if ($prior->contains(fn ($j) => $j->status !== 'sent')) {
+                    continue;
+                }
                 $step = $prior->count() + 1;
-                if ($step > $s->max_reminders) continue;
+                if ($step > $s->max_reminders) {
+                    continue;
+                }
                 $due = $i->due_date->format('Y-m-d');
                 // O intervalo é contado da data REAL do aviso anterior, não
                 // de uma previsão que poderia ter atrasado por falta de conexão.
@@ -160,17 +183,25 @@ final class MfBillingAutoService
                     $at = MfBillingAutoRules::schedule($due, $s->first_after_days, $s->repeat_interval_days, 1, $s->send_time);
                 } else {
                     $previous = $prior->last();
-                    if (!$previous?->completed_at) continue;
+                    if (! $previous?->completed_at) {
+                        continue;
+                    }
                     $sentDate = $previous->completed_at->copy()->timezone('America/Sao_Paulo')->format('Y-m-d');
                     $at = MfBillingAutoRules::schedule($sentDate, $s->repeat_interval_days, $s->repeat_interval_days, 1, $s->send_time);
                 }
-                if ($now < $at->getTimestamp() || $now > $at->getTimestamp() + $maxLag) continue;
+                if ($now < $at->getTimestamp() || $now > $at->getTimestamp() + $maxLag) {
+                    continue;
+                }
                 // Não sobrepor avisos manuais/Meta da implementação anterior
                 // na mesma cobrança, mesmo que tenham mais de 24 horas.
                 if (MfBillingReminder::query()->where('invoice_id', $i->id)
-                    ->whereNotIn('status', ['failed', 'not_sent'])->exists()) continue;
+                    ->whereNotIn('status', ['failed', 'not_sent'])->exists()) {
+                    continue;
+                }
                 $template = $s->templates[$step - 1] ?? null;
-                if (!is_string($template) || trim($template) === '') continue;
+                if (! is_string($template) || trim($template) === '') {
+                    continue;
+                }
                 $msg = MfBillingAutoRules::render($template, [
                     'nome' => explode(' ', trim($a->student->name))[0] ?: $a->student->name,
                     'mes' => substr($i->reference_month, 5, 2).'/'.substr($i->reference_month, 0, 4),
@@ -187,9 +218,11 @@ final class MfBillingAutoService
                     'claimed_at' => now(),
                 ]);
                 $this->billing->event($a, $i, null, 'auto_reminder_reserved', ['step' => $step, 'job_uuid' => $j->uuid]);
+
                 return ['uuid' => $j->uuid, 'invoice_uuid' => $i->uuid, 'step' => $step,
                     'recipient' => $j->recipient, 'message' => $j->message];
             }
+
             return null;
         }, 3);
     }
@@ -204,18 +237,24 @@ final class MfBillingAutoService
             $s = MfBillingAutoSetting::query()->whereKey(1)->first();
             abort_unless($j->status === 'reserved', 409, 'Etapa já confirmada ou encerrada.');
             $valid = $s && $s->enabled && $j->settings_revision === $s->revision
-                && $s->sender_phone === MfBillingRules::phone($connectedPhone)
+                && MfBillingSenderPhone::matches($s->sender_phone, MfBillingRules::phone($connectedPhone))
                 && $j->sender_phone === $s->sender_phone && $a->whatsapp_phone === $j->recipient
                 && $a->revision === $j->account_revision && $i->revision === $j->invoice_revision
-                && !$i->paid_on && !$i->cancelled_at && $a->enabled && $a->consented_at
-                && $a->student->active && !$a->student->isArchived()
+                && ! $i->paid_on && ! $i->cancelled_at && $a->enabled && $a->consented_at
+                && $a->student->active && ! $a->student->isArchived()
                 && $j->claimed_at->gte(now()->subMinutes(3));
-            if (!$valid) {
-                $j->status = 'cancelled'; $j->error_code = 'condition_changed';
-                $j->completed_at = now(); $j->save();
+            if (! $valid) {
+                $j->status = 'cancelled';
+                $j->error_code = 'condition_changed';
+                $j->completed_at = now();
+                $j->save();
+
                 return ['can_send' => false, 'reason' => 'Cobrança ou configuração alterada. Nenhuma mensagem deve ser enviada.'];
             }
-            $j->status = 'sending'; $j->confirmed_at = now(); $j->save();
+            $j->status = 'sending';
+            $j->confirmed_at = now();
+            $j->save();
+
             return ['can_send' => true, 'uuid' => $j->uuid, 'recipient' => $j->recipient, 'message' => $j->message];
         }, 3);
     }
@@ -224,14 +263,18 @@ final class MfBillingAutoService
     {
         return DB::transaction(function () use ($job, $status, $providerId, $code) {
             $j = MfBillingAutoOutbox::query()->whereKey($job->id)->lockForUpdate()->firstOrFail();
-            if (in_array($j->status, ['sent', 'unknown', 'not_sent'], true)) return ['uuid' => $j->uuid, 'status' => $j->status];
+            if (in_array($j->status, ['sent', 'unknown', 'not_sent'], true)) {
+                return ['uuid' => $j->uuid, 'status' => $j->status];
+            }
             abort_unless($j->status === 'sending', 409, 'O envio não foi confirmado para este registro.');
             $j->status = $status;
             $j->provider_id = $providerId ? mb_substr($providerId, 0, 255) : null;
             $j->error_code = $code ? mb_substr($code, 0, 80) : null;
-            $j->completed_at = now(); $j->save();
+            $j->completed_at = now();
+            $j->save();
             $i = $j->invoice()->with('account')->firstOrFail();
             $this->billing->event($i->account, $i, null, 'auto_reminder_'.$status, ['job_uuid' => $j->uuid, 'step' => $j->step]);
+
             return ['uuid' => $j->uuid, 'status' => $j->status];
         }, 3);
     }
@@ -241,6 +284,7 @@ final class MfBillingAutoService
     {
         $normalized = MfBillingRules::phone($phone);
         $hash = hash_hmac('sha256', (string) $normalized, (string) config('app.key'));
+
         return DB::transaction(function () use ($hash) {
             $count = 0;
             foreach (MfBillingAccount::query()->where('phone_hash', $hash)->whereNotNull('consented_at')->lockForUpdate()->get() as $a) {
@@ -251,6 +295,7 @@ final class MfBillingAutoService
                 $this->billing->event($a, null, null, 'whatsapp_optout', ['source' => 'local_whatsapp_worker']);
                 $count++;
             }
+
             return $count;
         }, 3);
     }
@@ -258,7 +303,7 @@ final class MfBillingAutoService
     public function history(): array
     {
         return MfBillingAutoOutbox::query()->with('invoice.account.student')
-            ->orderByDesc('id')->limit(50)->get()->map(fn($j) => [
+            ->orderByDesc('id')->limit(50)->get()->map(fn ($j) => [
                 'uuid' => $j->uuid, 'step' => $j->step, 'status' => $j->status,
                 'student_name' => $j->invoice->account->student->name,
                 'reference_month' => $j->invoice->reference_month,
