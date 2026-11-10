@@ -565,3 +565,6 @@ Route::prefix('v1')->group(function (): void {
             }
         );
 });
+
+// MF mensalidades: módulo administrativo separado das avaliações.
+require __DIR__.'/mf-billing.php';
