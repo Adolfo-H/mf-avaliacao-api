@@ -180,7 +180,7 @@ final class MfBillingAutoService
                 // O intervalo é contado da data REAL do aviso anterior, não
                 // de uma previsão que poderia ter atrasado por falta de conexão.
                 if ($step === 1) {
-                    $at = MfBillingAutoRules::schedule($due, $s->first_after_days, $s->repeat_interval_days, 1, $s->send_time);
+                    $at = MfBillingAutoRules::firstReminderAt($due, $i->reference_month, $a->reminder_grace_day, $s->first_after_days, $s->send_time);
                 } else {
                     $previous = $prior->last();
                     if (! $previous?->completed_at) {
