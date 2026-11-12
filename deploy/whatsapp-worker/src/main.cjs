@@ -157,4 +157,20 @@ watchdogTimer=setInterval(()=>{
 },60000);
 log('MF_CLOUD_WORKER_INICIANDO. MODO_ENVIO:',allowSend?'ATIVADO':'DESATIVADO');
 log('ATENCAO: mantenha uma unica instancia; sessao em disco persistente, nao em banco.');
-client.initialize().catch(e=>fatal(e?.name||'erro ao iniciar navegador'));
+client.initialize().catch(e => {
+  const detail = String(e?.message || '')
+    .split(/\r?\n/)[0]
+    .replace(/https?:\/\/\S+/gi, '[URL]')
+    .replace(/\b(token|secret|password|authorization|key)\b\s*[:=]\s*\S+/gi, '[SEGREDO]')
+    .replace(/(?:\/[\w.@-]+){2,}/g, '[CAMINHO]')
+    .replace(/[A-Za-z0-9_-]{40,}/g, '[VALOR]')
+    .replace(/\+?\d{7,}/g, '[NUMERO]')
+    .replace(/[^\s@]+@[^\s@]+/g, '[EMAIL]')
+    .slice(0, 180);
+
+  log('WHATSAPP_INIT_FALHOU:',
+    String(e?.name || 'Error'),
+    detail || 'sem descricao');
+
+  fatal('falha na inicializacao do WhatsApp');
+});
