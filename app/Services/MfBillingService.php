@@ -73,6 +73,27 @@ final class MfBillingService
             $a->save();
             $this->event($a, null, $user, $old ? 'account_updated' : 'account_created', ['before' => $old, 'after' => ['amount_cents' => $a->amount_cents, 'due_day' => $a->due_day, 'reminder_grace_day' => $a->reminder_grace_day, 'enabled' => $a->enabled, 'consented' => $consent]]);
 
+            // Ao cadastrar ou ativar uma mensalidade com inicio ate o mes atual,
+            // materializar a competencia corrente na mesma transacao. Nao altera
+            // uma fatura existente, nao cria meses futuros e nao envia mensagens.
+            $currentMonth = now('America/Sao_Paulo')->format('Y-m');
+            if ($a->enabled && $student->active && ! $student->isArchived()
+                && $a->start_month <= $currentMonth
+                && ! $a->invoices()->where('reference_month', $currentMonth)->exists()) {
+                $i = MfBillingInvoice::create([
+                    'account_id' => $a->id,
+                    'reference_month' => $currentMonth,
+                    'amount_cents' => $a->amount_cents,
+                    'due_date' => MfBillingRules::dueDate($currentMonth, $a->due_day),
+                    'revision' => 1,
+                ]);
+                $this->event($a, $i, $user, 'invoice_created', [
+                    'month' => $currentMonth,
+                    'amount_cents' => $i->amount_cents,
+                    'due_date' => $i->due_date->format('Y-m-d'),
+                ]);
+            }
+
             return $a;
         }, 3);
     }
