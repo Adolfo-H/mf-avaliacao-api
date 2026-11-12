@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Services\MfBillingAutoService;
+use App\Services\MfBillingRunStatusService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
@@ -13,7 +14,7 @@ use Illuminate\Validation\ValidationException;
 
 final class MfBillingAutomationController extends Controller
 {
-    public function __construct(private MfBillingAutoService $automation) {}
+    public function __construct(private MfBillingAutoService $automation, private MfBillingRunStatusService $runs) {}
 
     private function schemaReady(): void
     {
@@ -23,7 +24,11 @@ final class MfBillingAutomationController extends Controller
     public function settings(): JsonResponse
     {
         $this->schemaReady();
-        return response()->json(['data' => $this->automation->summary($this->automation->settings())]);
+        $settings = $this->automation->settings();
+        return response()->json(['data' => array_merge(
+            $this->automation->summary($settings),
+            ['operation' => $this->runs->summary($settings)]
+        )]);
     }
 
     public function update(Request $request): JsonResponse
@@ -45,7 +50,10 @@ final class MfBillingAutomationController extends Controller
         } catch (\InvalidArgumentException $e) {
             throw ValidationException::withMessages(['templates' => $e->getMessage()]);
         }
-        return response()->json(['data' => $this->automation->summary($s)]);
+        return response()->json(['data' => array_merge(
+            $this->automation->summary($s),
+            ['operation' => $this->runs->summary($s)]
+        )]);
     }
 
     public function history(): JsonResponse

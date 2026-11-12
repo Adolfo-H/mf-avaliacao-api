@@ -41,7 +41,7 @@ final class MfBillingAutoService
             'first_after_days' => 3,
             'repeat_interval_days' => 5,
             'max_reminders' => 1,
-            'send_time' => '09:00',
+            'send_time' => '08:00',
             'templates' => MfBillingAutoRules::DEFAULT_TEMPLATES,
             'revision' => 1,
             'worker_connected' => false,
@@ -75,13 +75,13 @@ final class MfBillingAutoService
             'worker_seen_at' => $s->worker_seen_at?->toIso8601String(),
             'worker_matches_sender' => MfBillingSenderPhone::matches($s->sender_phone, $s->worker_phone),
             'daily_cap' => (int) config('mf_billing_local.max_daily_reminders', 10),
-            'note' => 'Envio local não oficial: depende de computador conectado e pode causar restrições à conta WhatsApp.',
+            'note' => 'WhatsApp Web não oficial, agendado no GitHub. Não permanece online fora das execuções e pode sofrer restrições da plataforma.',
         ];
     }
 
     public function configure(array $data, User $user): MfBillingAutoSetting
     {
-        $templates = MfBillingAutoRules::validateTemplates($data['templates'], (int) $data['max_reminders']);
+        $templates = MfBillingAutoRules::validateTemplates($data['templates'], 3);
         $phone = MfBillingRules::phone($data['sender_phone'] ?? null);
         if ($data['enabled'] && ! $phone) {
             throw ValidationException::withMessages(['sender_phone' => 'Informe o número remetente com DDI.']);
@@ -103,7 +103,7 @@ final class MfBillingAutoService
             $s->first_after_days = (int) $data['first_after_days'];
             $s->repeat_interval_days = (int) $data['repeat_interval_days'];
             $s->max_reminders = (int) $data['max_reminders'];
-            $s->send_time = $data['send_time'];
+            $s->send_time = '08:00'; // Mesmo horario da rotina agendada; o painel edita apenas mensagens.
             $s->templates = $templates;
             $s->updated_by = $user->id;
             $s->revision++;
@@ -173,21 +173,21 @@ final class MfBillingAutoService
                     continue;
                 }
                 $step = $prior->count() + 1;
-                if ($step > $s->max_reminders) {
+                if ($step > (int) $a->max_reminders) {
                     continue;
                 }
                 $due = $i->due_date->format('Y-m-d');
                 // O intervalo é contado da data REAL do aviso anterior, não
                 // de uma previsão que poderia ter atrasado por falta de conexão.
                 if ($step === 1) {
-                    $at = MfBillingAutoRules::firstReminderAt($due, $i->reference_month, $a->reminder_grace_day, $s->first_after_days, $s->send_time);
+                    $at = MfBillingAutoRules::firstReminderAt($due, $i->reference_month, $a->reminder_grace_day ?? (int) $a->due_day, $s->first_after_days, $s->send_time);
                 } else {
                     $previous = $prior->last();
                     if (! $previous?->completed_at) {
                         continue;
                     }
                     $sentDate = $previous->completed_at->copy()->timezone('America/Sao_Paulo')->format('Y-m-d');
-                    $at = MfBillingAutoRules::schedule($sentDate, $s->repeat_interval_days, $s->repeat_interval_days, 1, $s->send_time);
+                    $at = MfBillingAutoRules::schedule($sentDate, (int) $a->reminder_interval_days, (int) $a->reminder_interval_days, 1, $s->send_time);
                 }
                 if ($now < $at->getTimestamp() || $now > $at->getTimestamp() + $maxLag) {
                     continue;
@@ -198,7 +198,18 @@ final class MfBillingAutoService
                     ->whereNotIn('status', ['failed', 'not_sent'])->exists()) {
                     continue;
                 }
-                $template = $s->templates[$step - 1] ?? null;
+                // Três modelos sao ALTERNATIVAS de texto, não três envios obrigatórios.
+                // Escolha criptograficamente aleatória, registrada junto à reserva,
+                // evitando repetir o mesmo texto dentro desta mensalidade.
+                $used = $prior->pluck('template_index')
+                    ->filter(static fn ($index) => $index !== null)
+                    ->map(static fn ($index) => (int) $index)->all();
+                $options = array_values(array_diff([0, 1, 2], $used));
+                if ($options === []) {
+                    continue;
+                }
+                $templateIndex = $options[random_int(0, count($options) - 1)];
+                $template = $s->templates[$templateIndex] ?? null;
                 if (! is_string($template) || trim($template) === '') {
                     continue;
                 }
@@ -211,7 +222,7 @@ final class MfBillingAutoService
                     'dias_atraso' => (string) max(0, abs(now('America/Sao_Paulo')->startOfDay()->diffInDays($i->due_date->copy()->startOfDay(), false))),
                 ]);
                 $j = MfBillingAutoOutbox::create([
-                    'invoice_id' => $i->id, 'step' => $step, 'status' => 'reserved',
+                    'invoice_id' => $i->id, 'step' => $step, 'status' => 'reserved', 'template_index' => $templateIndex,
                     'recipient' => $a->whatsapp_phone, 'sender_phone' => $s->sender_phone,
                     'message' => $msg, 'invoice_revision' => $i->revision,
                     'account_revision' => $a->revision, 'settings_revision' => $s->revision,

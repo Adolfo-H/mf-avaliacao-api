@@ -23,6 +23,7 @@ final class MfBillingAutoOutbox extends Model
             'invoice_revision' => 'integer',
             'account_revision' => 'integer',
             'settings_revision' => 'integer',
+            'template_index' => 'integer',
             'claimed_at' => 'datetime',
             'confirmed_at' => 'datetime',
             'completed_at' => 'datetime',

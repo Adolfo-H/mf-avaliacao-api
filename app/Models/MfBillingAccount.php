@@ -16,7 +16,7 @@ class MfBillingAccount extends Model
 
     protected function casts(): array
     {
-        return ['amount_cents' => 'integer', 'due_day' => 'integer', 'reminder_grace_day' => 'integer', 'enabled' => 'boolean', 'revision' => 'integer', 'whatsapp_phone' => 'encrypted', 'consent_note' => 'encrypted', 'consented_at' => 'datetime'];
+        return ['amount_cents' => 'integer', 'due_day' => 'integer', 'reminder_grace_day' => 'integer', 'max_reminders' => 'integer', 'reminder_interval_days' => 'integer', 'enabled' => 'boolean', 'revision' => 'integer', 'whatsapp_phone' => 'encrypted', 'consent_note' => 'encrypted', 'consented_at' => 'datetime'];
     }
 
     public function student(): BelongsTo

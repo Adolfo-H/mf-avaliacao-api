@@ -56,6 +56,8 @@ final class MfBillingService
             // O valor sera aplicado depois de registrar o estado anterior.
             $old = $a->exists ? ['amount_cents' => $a->amount_cents, 'due_day' => $a->due_day, 'reminder_grace_day' => $a->reminder_grace_day, 'enabled' => $a->enabled, 'start_month' => $a->start_month, 'consented' => (bool) $a->consented_at] : null;
             $a->reminder_grace_day = $limitDay;
+            $a->max_reminders = (int) ($data['max_reminders'] ?? ($a->exists ? $a->max_reminders : 1));
+            $a->reminder_interval_days = (int) ($data['reminder_interval_days'] ?? ($a->exists ? $a->reminder_interval_days : 5));
             $a->amount_cents = $data['amount_cents'];
             $a->due_day = $data['due_day'];
             // Competência inicial não pode ser reescrita com cobranças existentes.
@@ -200,6 +202,6 @@ final class MfBillingService
 
     public function accountData(?MfBillingAccount $a, Student $s): array
     {
-        return ['student' => ['uuid' => $s->uuid, 'name' => $s->name, 'active' => $s->active, 'archived' => $s->isArchived()], 'configured' => (bool) $a, 'revision' => $a?->revision ?? 0, 'amount_cents' => $a?->amount_cents ?? null, 'due_day' => $a?->due_day ?? 10, 'reminder_grace_day' => $a?->reminder_grace_day, 'start_month' => $a?->start_month ?? now('America/Sao_Paulo')->format('Y-m'), 'enabled' => $a?->enabled ?? true, 'whatsapp_phone' => $a?->whatsapp_phone ?? ($s->mobile_phone ?? ''), 'whatsapp_consent' => (bool) $a?->consented_at, 'consent_note' => $a?->consent_note ?? '', 'consented_at' => $a?->consented_at?->toIso8601String()];
+        return ['student' => ['uuid' => $s->uuid, 'name' => $s->name, 'active' => $s->active, 'archived' => $s->isArchived()], 'configured' => (bool) $a, 'revision' => $a?->revision ?? 0, 'amount_cents' => $a?->amount_cents ?? null, 'due_day' => $a?->due_day ?? 10, 'reminder_grace_day' => $a?->reminder_grace_day, 'max_reminders' => $a?->max_reminders ?? 1, 'reminder_interval_days' => $a?->reminder_interval_days ?? 5, 'start_month' => $a?->start_month ?? now('America/Sao_Paulo')->format('Y-m'), 'enabled' => $a?->enabled ?? true, 'whatsapp_phone' => $a?->whatsapp_phone ?? ($s->mobile_phone ?? ''), 'whatsapp_consent' => (bool) $a?->consented_at, 'consent_note' => $a?->consent_note ?? '', 'consented_at' => $a?->consented_at?->toIso8601String()];
     }
 }
