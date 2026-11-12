@@ -59,7 +59,31 @@ final class MfBillingController extends Controller
         }
         $page = $base->with('account.student')->orderBy('due_date')->orderBy('id')->paginate(25);
 
-        return response()->json(['data' => $page->getCollection()->map(fn ($i) => $this->billing->invoiceData($i)), 'meta' => ['current_page' => $page->currentPage(), 'last_page' => $page->lastPage(), 'total' => $page->total()], 'summary' => collect($sums->getAttributes())->map(fn ($v) => (int) $v), 'today' => $today]);
+        // Cadastros com inicio futuro nao sao faturas. Exibi-los no financeiro
+        // evita que uma configuracao salva pareca ter desaparecido.
+        // Nao incluir no total em aberto nem nas cobrancas do mes selecionado.
+        $scheduled = collect();
+        if ($status === 'all' && $page->currentPage() === 1) {
+            $scheduledQuery = MfBillingAccount::query()
+                ->with('student')
+                ->where('enabled', true)
+                ->where('start_month', '>', $month)
+                ->whereHas('student', fn ($q) => $q->where('active', true)->whereNull('archived_at'));
+            if (! empty($d['search'])) {
+                $escapedSearch = str_replace(['%', '_'], ['\\%', '\\_'], $d['search']);
+                $scheduledQuery->whereHas('student', fn ($q) => $q->where('name', 'like', '%'.$escapedSearch.'%'));
+            }
+            $scheduled = $scheduledQuery->orderBy('start_month')->orderBy('id')
+                ->limit(30)->get()->map(fn (MfBillingAccount $a) => [
+                    'student_uuid' => $a->student->uuid,
+                    'student_name' => $a->student->name,
+                    'start_month' => $a->start_month,
+                    'due_day' => (int) $a->due_day,
+                    'amount_cents' => (int) $a->amount_cents,
+                ]);
+        }
+
+        return response()->json(['data' => $page->getCollection()->map(fn ($i) => $this->billing->invoiceData($i)), 'meta' => ['current_page' => $page->currentPage(), 'last_page' => $page->lastPage(), 'total' => $page->total()], 'summary' => collect($sums->getAttributes())->map(fn ($v) => (int) $v), 'today' => $today, 'scheduled_accounts' => $scheduled]);
     }
 
     public function account(Student $student): JsonResponse
