@@ -97,7 +97,7 @@ final class MfBillingController extends Controller
 
     public function configure(Request $r, Student $student): JsonResponse
     {
-        $d = $r->validate(['revision' => 'required|integer|min:0', 'amount_cents' => 'required|integer|min:1|max:100000000', 'due_day' => 'required|integer|min:1|max:31', 'reminder_grace_day' => 'nullable|integer|min:1|max:31', 'start_month' => ['required', 'regex:/^20\d{2}-(0[1-9]|1[0-2])$/D'], 'enabled' => 'required|boolean', 'whatsapp_phone' => 'nullable|string|max:30', 'whatsapp_consent' => 'required|boolean', 'consent_note' => 'nullable|string|max:500']);
+        $d = $r->validate(['revision' => 'required|integer|min:0', 'amount_cents' => 'required|integer|min:1|max:100000000', 'due_day' => 'required|integer|min:1|max:31', 'reminder_grace_day' => 'nullable|integer|min:1|max:31', 'max_reminders' => 'sometimes|integer|min:1|max:3', 'reminder_interval_days' => 'sometimes|integer|min:2|max:30', 'start_month' => ['required', 'regex:/^20\d{2}-(0[1-9]|1[0-2])$/D'], 'enabled' => 'required|boolean', 'whatsapp_phone' => 'nullable|string|max:30', 'whatsapp_consent' => 'required|boolean', 'consent_note' => 'nullable|string|max:500']);
         try {
             $a = $this->billing->configure($student, $d, $r->user());
         } catch (\InvalidArgumentException $e) {

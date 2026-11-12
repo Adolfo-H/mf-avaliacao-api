@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\V1\MfBillingAutomationController;
 use App\Http\Controllers\Api\V1\MfBillingLocalWorkerController;
+use App\Http\Controllers\Api\V1\MfBillingRunStatusController;
 use App\Http\Middleware\EnsureMfBillingAccess;
 use App\Http\Middleware\EnsureMfBillingLocalWorker;
 use Illuminate\Support\Facades\Route;
@@ -22,5 +23,7 @@ Route::prefix('v1/billing')->group(function (): void {
             Route::post('jobs/{job}/check', [MfBillingLocalWorkerController::class, 'check']);
             Route::post('jobs/{job}/ack', [MfBillingLocalWorkerController::class, 'ack']);
             Route::post('opt-out', [MfBillingLocalWorkerController::class, 'optOut']);
+            // Recebe metadados de execucao somente com token privado do worker.
+            Route::post('run-status', [MfBillingRunStatusController::class, 'record']);
         });
 });

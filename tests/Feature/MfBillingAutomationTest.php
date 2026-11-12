@@ -72,7 +72,7 @@ final class MfBillingAutomationTest extends TestCase
     {
         $this->putJson('/api/v1/billing/students/'.$this->student->uuid, [
             'revision' => 0, 'amount_cents' => 25000, 'due_day' => 10, 'start_month' => '2026-11',
-            'enabled' => true, 'whatsapp_phone' => '+55 45 99999-0000',
+            'enabled' => true, 'max_reminders' => 2, 'reminder_interval_days' => 5, 'whatsapp_phone' => '+55 45 99999-0000',
             'whatsapp_consent' => true, 'consent_note' => 'Autorização de teste',
         ])->assertOk();
         $this->postJson('/api/v1/billing/generate', ['month' => '2026-11'])->assertOk();
