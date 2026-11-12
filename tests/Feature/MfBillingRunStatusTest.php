@@ -40,7 +40,7 @@ final class MfBillingRunStatusTest extends TestCase
         parent::tearDown();
     }
 
-    private function status(): array
+    private function operationStatus(): array
     {
         return $this->getJson('/api/v1/billing/automation/settings')->assertOk()->json('data.operation');
     }
@@ -55,12 +55,12 @@ final class MfBillingRunStatusTest extends TestCase
 
     public function test_schedule_waiting_then_start_and_success_with_zero_messages(): void
     {
-        self::assertSame('waiting', $this->status()['state']);
+        self::assertSame('waiting', $this->operationStatus()['state']);
         $this->travelTo(CarbonImmutable::parse('2026-11-11 08:10:00', 'America/Sao_Paulo'));
         $this->report('started');
-        self::assertSame('starting', $this->status()['state']);
+        self::assertSame('starting', $this->operationStatus()['state']);
         $this->report('succeeded', ['sent_count' => 0]);
-        $summary = $this->status();
+        $summary = $this->operationStatus();
         self::assertSame('waiting', $summary['state']);
         self::assertSame(0, $summary['last_success_sent_count']);
         self::assertSame('succeeded', $summary['last_status']);
@@ -74,17 +74,17 @@ final class MfBillingRunStatusTest extends TestCase
         $this->travelTo(CarbonImmutable::parse('2026-11-11 08:10:00', 'America/Sao_Paulo'));
         $this->report('started');
         $this->travelTo(CarbonImmutable::parse('2026-11-11 08:41:00', 'America/Sao_Paulo'));
-        self::assertSame('failed', $this->status()['state']);
+        self::assertSame('failed', $this->operationStatus()['state']);
         $this->report('failed', ['error_code' => 'worker']);
-        self::assertSame('worker', $this->status()['last_error_code']);
-        self::assertSame('failed', $this->status()['state']);
+        self::assertSame('worker', $this->operationStatus()['last_error_code']);
+        self::assertSame('failed', $this->operationStatus()['state']);
     }
 
     public function test_missing_run_after_grace_is_unconfirmed_not_invented_failure(): void
     {
         $this->travelTo(CarbonImmutable::parse('2026-11-11 11:08:00', 'America/Sao_Paulo'));
-        self::assertSame('unconfirmed', $this->status()['state']);
-        self::assertNull($this->status()['last_status']);
+        self::assertSame('unconfirmed', $this->operationStatus()['state']);
+        self::assertNull($this->operationStatus()['last_status']);
     }
 
     public function test_reporting_requires_private_worker_token(): void
@@ -107,7 +107,7 @@ final class MfBillingRunStatusTest extends TestCase
         $settings = app(MfBillingAutoService::class)->settings();
         $settings->enabled = false;
         $settings->save();
-        self::assertSame('disabled', $this->status()['state']);
-        self::assertSame(2, $this->status()['last_success_sent_count']);
+        self::assertSame('disabled', $this->operationStatus()['state']);
+        self::assertSame(2, $this->operationStatus()['last_success_sent_count']);
     }
 }
